@@ -30,9 +30,6 @@ export async function signup(email: string, password: string, name: string) {
     data: { email, passwordHash, name, verificationToken },
   });
 
-  // TODO: enviar `verificationToken` por correo (Resend/SendGrid) cuando haya
-  // un dominio propio verificado. Por ahora se devuelve en la respuesta para
-  // poder probar el flujo de verificación de punta a punta.
   return { userId: user.id, verificationToken };
 }
 

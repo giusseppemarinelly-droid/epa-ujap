@@ -12,5 +12,3 @@ services:
         generateValue: true
       - key: ALLOWED_EMAIL_DOMAIN
         value: ujap.edu.ve
-      - key: PORT
-        value: 4000
