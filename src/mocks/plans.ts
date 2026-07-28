@@ -1,0 +1,43 @@
+import type { Plan } from '@/src/types';
+
+export const plans: Plan[] = [
+  {
+    id: 'p-calculo',
+    creatorId: 'u-mateo',
+    title: 'Estudio Cálculo II',
+    description: 'Repaso de límites y derivadas antes del parcial. Trae tu calculadora.',
+    category: 'estudio',
+    location: { lat: 10.2167, lng: -68.0092, address: 'Cafetería El Samán' },
+    dateTime: '2026-07-28T15:00:00-04:00',
+    capacity: 10,
+    status: 'en_curso',
+    isPublic: true,
+    attendeeIds: ['u-mateo', 'u-daniel', 'u-alejandro'],
+  },
+  {
+    id: 'p-futbol',
+    creatorId: 'u-alejandro',
+    title: 'Partido de fútbol 5v5',
+    description: 'Armamos equipos en la cancha de la facultad de Ingeniería.',
+    category: 'deportes',
+    location: { lat: 10.2178, lng: -68.0105, address: 'Cancha de Ingeniería' },
+    dateTime: '2026-07-28T17:30:00-04:00',
+    capacity: 10,
+    status: 'programado',
+    isPublic: true,
+    attendeeIds: ['u-alejandro', 'u-mateo'],
+  },
+  {
+    id: 'p-comida',
+    creatorId: 'u-valentina',
+    title: 'Almuerzo grupo de Industrial',
+    description: 'Salida a comer después del laboratorio.',
+    category: 'comida',
+    location: { lat: 10.2159, lng: -68.008, address: 'Comedor UJAP' },
+    dateTime: '2026-07-28T12:30:00-04:00',
+    capacity: 6,
+    status: 'programado',
+    isPublic: true,
+    attendeeIds: ['u-valentina', 'u-camila'],
+  },
+];
