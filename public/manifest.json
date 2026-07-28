@@ -1,0 +1,17 @@
+{
+  "name": "Epa — El punto de encuentro de la UJAP",
+  "short_name": "Epa",
+  "description": "App social de la comunidad de la Universidad José Antonio Páez.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9F9F9",
+  "theme_color": "#FF6F61",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

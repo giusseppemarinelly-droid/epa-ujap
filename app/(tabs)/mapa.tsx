@@ -1,22 +1,14 @@
 import { useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { MapCanvas } from '@/src/components/mapa/MapCanvas';
 import { PlanDetailCard } from '@/src/components/mapa/PlanDetailCard';
-import { PlanMarker } from '@/src/components/mapa/PlanMarker';
 import { Avatar } from '@/src/components/ui';
 import { useAuthStore, usePlansStore } from '@/src/store';
 import { colors, epaGradient, radii } from '@/src/theme/tokens';
-
-const UJAP_REGION = {
-  latitude: 10.2167,
-  longitude: -68.0092,
-  latitudeDelta: 0.012,
-  longitudeDelta: 0.012,
-};
 
 export default function MapaScreen() {
   const plans = usePlansStore((state) => state.plans);
@@ -27,16 +19,7 @@ export default function MapaScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <MapView style={{ flex: 1 }} initialRegion={UJAP_REGION}>
-        {plans.map((plan) => (
-          <PlanMarker
-            key={plan.id}
-            plan={plan}
-            selected={plan.id === selectedPlanId}
-            onPress={() => setSelectedPlanId(plan.id)}
-          />
-        ))}
-      </MapView>
+      <MapCanvas plans={plans} selectedPlanId={selectedPlanId} onSelectPlan={setSelectedPlanId} />
 
       <SafeAreaView edges={['top']} className="absolute top-0 left-0 right-0">
         <View className="flex-row items-center px-margin-mobile py-3">

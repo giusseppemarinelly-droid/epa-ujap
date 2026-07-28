@@ -12,3 +12,12 @@ services:
         generateValue: true
       - key: ALLOWED_EMAIL_DOMAIN
         value: ujap.edu.ve
+
+  - type: web
+    name: epa-web
+    runtime: static
+    buildCommand: npm install && npx expo export -p web
+    staticPublishPath: ./dist
+    envVars:
+      - key: EXPO_PUBLIC_API_URL
+        value: https://epa-ujap.onrender.com
