@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import cors from 'cors';
 import express from 'express';
 
@@ -10,6 +12,7 @@ import { interestsRouter } from './modules/interests/interests.routes';
 import { plansRouter } from './modules/plans/plans.routes';
 
 const app = express();
+const publicWebDir = path.join(__dirname, '..', 'public-web');
 
 app.use(cors());
 app.use(express.json());
@@ -21,6 +24,13 @@ app.use('/interests', interestsRouter);
 app.use('/plans', plansRouter);
 app.use('/groups', groupsRouter);
 app.use('/conversations', conversationsRouter);
+
+// Sirve el build web de la app (PWA para "Agregar a inicio" en iOS) desde
+// el mismo servidor que la API.
+app.use(express.static(publicWebDir, { extensions: ['html'] }));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(publicWebDir, 'index.html'));
+});
 
 app.use(errorHandler);
 

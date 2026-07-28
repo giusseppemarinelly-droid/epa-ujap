@@ -1,0 +1,11 @@
+node_modules
+backend/node_modules
+backend/dist
+backend/.env
+dist
+.expo
+.git
+.claude
+android
+ios
+*.log
