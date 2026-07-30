@@ -5,6 +5,7 @@ import type {
   Group,
   GroupCategory,
   LookingFor,
+  Message,
   Plan,
   PlanCategory,
   PlanStatus,
@@ -208,3 +209,13 @@ export type BackendMessage = {
   sentAt: string;
   sender: BackendPersonSummary;
 };
+
+export function mapMessageFromBackend(raw: BackendMessage): Message {
+  return {
+    id: raw.id,
+    conversationId: raw.conversationId,
+    senderId: raw.senderId,
+    text: raw.text,
+    sentAt: raw.sentAt,
+  };
+}

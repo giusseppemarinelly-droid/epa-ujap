@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -15,6 +16,7 @@ const TABS: { value: Tab; label: string }[] = [
 ];
 
 export default function MensajesScreen() {
+  const router = useRouter();
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
   const conversations = useConversationsStore((state) => state.conversations);
   const fetchConversations = useConversationsStore((state) => state.fetchConversations);
@@ -43,7 +45,7 @@ export default function MensajesScreen() {
         <Pressable
           className="items-center justify-center rounded-full"
           style={{ width: 40, height: 40, backgroundColor: colors['ujap-navy'] }}
-          onPress={() => Alert.alert('Próximamente', 'Muy pronto vas a poder iniciar chats nuevos.')}
+          onPress={() => router.push('/chat/new')}
         >
           <MaterialIcons name="edit" size={18} color="#FFFFFF" />
         </Pressable>
@@ -86,7 +88,7 @@ export default function MensajesScreen() {
             conversation={item}
             lastMessage={item.lastMessageText}
             lastMessageAt={item.lastMessageAt}
-            onPress={() => Alert.alert(item.title, 'El chat se abre próximamente.')}
+            onPress={() => router.push(`/chat/${item.id}`)}
           />
         )}
         ListEmptyComponent={

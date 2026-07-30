@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ActionButtons } from '@/src/components/descubrir/ActionButtons';
 import { DiscoverCard } from '@/src/components/descubrir/DiscoverCard';
 import { FiltersSheet, type DiscoverFilters } from '@/src/components/descubrir/FiltersSheet';
+import { SwipeableCard } from '@/src/components/descubrir/SwipeableCard';
 import { Avatar } from '@/src/components/ui';
 import { useAuthStore, useDiscoverStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
@@ -17,6 +18,8 @@ export default function DescubrirScreen() {
   const queue = useDiscoverStore((state) => state.queue);
   const history = useDiscoverStore((state) => state.history);
   const fetchCandidates = useDiscoverStore((state) => state.fetchCandidates);
+  const descartar = useDiscoverStore((state) => state.descartar);
+  const conectar = useDiscoverStore((state) => state.conectar);
 
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [filters, setFilters] = useState<DiscoverFilters>({ career: '', interestIds: [] });
@@ -65,7 +68,13 @@ export default function DescubrirScreen() {
 
       <View className="flex-1 px-margin-mobile pb-4">
         {currentCandidate ? (
-          <DiscoverCard user={currentCandidate} />
+          <SwipeableCard
+            key={currentCandidate.id}
+            onSwipeLeft={() => descartar(currentCandidate.id)}
+            onSwipeRight={() => conectar(currentCandidate.id)}
+          >
+            <DiscoverCard user={currentCandidate} />
+          </SwipeableCard>
         ) : (
           <View className="flex-1 items-center justify-center">
             <MaterialIcons name="groups" size={48} color={colors['on-surface-variant']} />

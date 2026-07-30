@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Alert, Image, ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -8,6 +9,7 @@ import { useAuthStore, useGroupsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 export default function PerfilScreen() {
+  const router = useRouter();
   const currentUser = useAuthStore((state) => state.currentUser);
   const allInterests = useAuthStore((state) => state.interests);
   const logout = useAuthStore((state) => state.logout);
@@ -125,10 +127,7 @@ export default function PerfilScreen() {
         </View>
 
         <View className="px-margin-mobile mt-4 gap-3">
-          <Button
-            label="Editar perfil"
-            onPress={() => Alert.alert('Próximamente', 'Muy pronto vas a poder editar tu perfil.')}
-          />
+          <Button label="Editar perfil" onPress={() => router.push('/profile/edit')} />
           <Button label="Cerrar sesión" variant="ghost" onPress={logout} />
         </View>
       </ScrollView>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +12,7 @@ import { useAuthStore, usePlansStore } from '@/src/store';
 import { colors, epaGradient, radii } from '@/src/theme/tokens';
 
 export default function MapaScreen() {
+  const router = useRouter();
   const plans = usePlansStore((state) => state.plans);
   const fetchPlans = usePlansStore((state) => state.fetchPlans);
   const currentUser = useAuthStore((state) => state.currentUser);
@@ -48,10 +50,7 @@ export default function MapaScreen() {
       {selectedPlan && <PlanDetailCard plan={selectedPlan} onClose={() => setSelectedPlanId(null)} />}
 
       {!selectedPlan && (
-        <Pressable
-          className="absolute right-5 bottom-28"
-          onPress={() => Alert.alert('Próximamente', 'Muy pronto vas a poder armar tu propio plan.')}
-        >
+        <Pressable className="absolute right-5 bottom-28" onPress={() => router.push('/plan/new')}>
           <LinearGradient
             colors={epaGradient}
             start={{ x: 0, y: 0 }}

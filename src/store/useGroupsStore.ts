@@ -1,8 +1,14 @@
 import { create } from 'zustand';
 
 import { apiRequest } from '@/src/lib/api';
-import { mapGroupFromBackend, type BackendGroup } from '@/src/lib/enumMappers';
-import type { Group } from '@/src/types';
+import { groupCategoryToBackend, mapGroupFromBackend, type BackendGroup } from '@/src/lib/enumMappers';
+import type { Group, GroupCategory } from '@/src/types';
+
+type CreateGroupInput = {
+  name: string;
+  category: GroupCategory;
+  description: string;
+};
 
 type GroupsState = {
   groups: Group[];
@@ -11,6 +17,7 @@ type GroupsState = {
   fetchGroups: () => Promise<void>;
   joinGroup: (groupId: string) => Promise<void>;
   leaveGroup: (groupId: string) => Promise<void>;
+  createGroup: (data: CreateGroupInput) => Promise<Group>;
 };
 
 export const useGroupsStore = create<GroupsState>((set, get) => ({
@@ -38,5 +45,19 @@ export const useGroupsStore = create<GroupsState>((set, get) => ({
     const raw = await apiRequest<BackendGroup>(`/groups/${groupId}/leave`, { method: 'POST' });
     const updated = mapGroupFromBackend(raw);
     set({ groups: get().groups.map((group) => (group.id === groupId ? updated : group)) });
+  },
+
+  createGroup: async (data) => {
+    const raw = await apiRequest<BackendGroup>('/groups', {
+      method: 'POST',
+      body: {
+        name: data.name,
+        category: groupCategoryToBackend[data.category],
+        description: data.description,
+      },
+    });
+    const group = mapGroupFromBackend(raw);
+    set({ groups: [group, ...get().groups] });
+    return group;
   },
 }));

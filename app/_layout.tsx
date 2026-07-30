@@ -26,10 +26,12 @@ export default function RootLayout() {
   });
   const authStatus = useAuthStore((state) => state.status);
   const restoreSession = useAuthStore((state) => state.restoreSession);
+  const loadInterests = useAuthStore((state) => state.loadInterests);
 
   useEffect(() => {
     restoreSession();
-  }, [restoreSession]);
+    loadInterests();
+  }, [restoreSession, loadInterests]);
 
   const ready = fontsLoaded && authStatus !== 'checking';
 

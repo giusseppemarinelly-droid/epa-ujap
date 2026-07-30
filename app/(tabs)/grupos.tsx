@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -13,6 +14,7 @@ import type { GroupCategory } from '@/src/types';
 const categories: GroupCategory[] = ['Académico', 'Deportes', 'Tecnología', 'Creatividad', 'Arte'];
 
 export default function GruposScreen() {
+  const router = useRouter();
   const groups = useGroupsStore((state) => state.groups);
   const fetchGroups = useGroupsStore((state) => state.fetchGroups);
   const joinGroup = useGroupsStore((state) => state.joinGroup);
@@ -100,11 +102,7 @@ export default function GruposScreen() {
           <Text className="text-on-surface-variant text-center mt-1 mb-4">
             Crea tu propio grupo de interés e invita a más gente de la UJAP.
           </Text>
-          <Button
-            label="Crear grupo"
-            variant="ghost"
-            onPress={() => Alert.alert('Próximamente', 'Muy pronto vas a poder crear tu propio grupo.')}
-          />
+          <Button label="Crear grupo" variant="ghost" onPress={() => router.push('/group/new')} />
         </Card>
       </ScrollView>
     </SafeAreaView>

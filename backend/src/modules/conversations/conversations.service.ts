@@ -88,3 +88,16 @@ export async function getOrCreateDirectConversation(userId: string, otherUserId:
     include: { participants: { include: { user: true } } },
   });
 }
+
+export async function createGroupConversation(creatorId: string, participantIds: string[], title: string) {
+  const uniqueParticipantIds = Array.from(new Set([creatorId, ...participantIds]));
+
+  return prisma.conversation.create({
+    data: {
+      type: 'GRUPO',
+      title,
+      participants: { create: uniqueParticipantIds.map((userId) => ({ userId })) },
+    },
+    include: { participants: { include: { user: true } } },
+  });
+}

@@ -39,6 +39,17 @@ type AuthState = {
   completeOnboarding: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: {
+    name?: string;
+    bio?: string;
+    career?: string;
+    faculty?: Faculty;
+    semester?: number;
+    age?: number;
+    photoUrl?: string;
+    interestIds?: string[];
+    lookingFor?: LookingFor[];
+  }) => Promise<void>;
 };
 
 const emptyDraft: OnboardingDraft = {
@@ -173,5 +184,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await clearToken();
     set({ currentUser: null, status: 'signed-out', draft: emptyDraft });
+  },
+
+  updateProfile: async (data) => {
+    const updated = await apiRequest<BackendUser>('/auth/me', {
+      method: 'PATCH',
+      body: {
+        ...data,
+        faculty: data.faculty ? facultyToBackend[data.faculty] : undefined,
+        lookingFor: data.lookingFor?.map((value) => lookingForToBackend[value]),
+      },
+    });
+    set({ currentUser: mapUserFromBackend(updated) });
   },
 }));

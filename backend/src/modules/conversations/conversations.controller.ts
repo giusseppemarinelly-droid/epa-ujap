@@ -50,3 +50,14 @@ export async function startDirectConversationHandler(req: Request, res: Response
   const conversation = await conversationsService.getOrCreateDirectConversation(req.userId!, otherUserId);
   res.status(201).json(sanitizeParticipants(conversation));
 }
+
+const createGroupConversationSchema = z.object({
+  participantIds: z.array(z.string()).min(1),
+  title: z.string().min(1).max(120),
+});
+
+export async function createGroupConversationHandler(req: Request, res: Response) {
+  const { participantIds, title } = createGroupConversationSchema.parse(req.body);
+  const conversation = await conversationsService.createGroupConversation(req.userId!, participantIds, title);
+  res.status(201).json(sanitizeParticipants(conversation));
+}

@@ -65,11 +65,13 @@ export async function login(email: string, password: string) {
 }
 
 type ProfileUpdateInput = {
+  name?: string;
   faculty?: Faculty;
   career?: string;
   semester?: number;
   bio?: string;
   age?: number;
+  photoUrl?: string;
   interestIds?: string[];
   lookingFor?: LookingFor[];
 };

@@ -57,11 +57,13 @@ const facultyEnum = z.enum([
 const lookingForEnum = z.enum(['DEPORTES', 'ESTUDIO', 'PROYECTOS', 'AMISTADES', 'EVENTOS']);
 
 const updateProfileSchema = z.object({
+  name: z.string().min(2).max(80).optional(),
   faculty: facultyEnum.optional(),
   career: z.string().min(2).optional(),
   semester: z.number().int().min(1).max(12).optional(),
   bio: z.string().max(280).optional(),
   age: z.number().int().min(16).max(99).optional(),
+  photoUrl: z.string().url().optional(),
   interestIds: z.array(z.string()).optional(),
   lookingFor: z.array(lookingForEnum).optional(),
 });
