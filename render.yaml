@@ -12,3 +12,7 @@ services:
         generateValue: true
       - key: ALLOWED_EMAIL_DOMAIN
         value: ujap.edu.ve
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
