@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, Chip, Input } from '@/src/components/ui';
 import { LookingForCard } from '@/src/components/onboarding/LookingForCard';
-import { interests } from '@/src/mocks';
 import { useAuthStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { Faculty, LookingFor } from '@/src/types';
@@ -32,29 +31,48 @@ const EMAIL_DOMAIN = '@ujap.edu.ve';
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { draft, setEmail, setAcademicProfile, setBio, toggleInterest, toggleLookingFor, completeOnboarding } =
-    useAuthStore();
+  const draft = useAuthStore((state) => state.draft);
+  const interests = useAuthStore((state) => state.interests);
+  const setDraftField = useAuthStore((state) => state.setDraftField);
+  const toggleInterest = useAuthStore((state) => state.toggleInterest);
+  const toggleLookingFor = useAuthStore((state) => state.toggleLookingFor);
+  const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
+  const loadInterests = useAuthStore((state) => state.loadInterests);
 
-  const [career, setCareer] = useState(draft.career ?? '');
+  const [submitting, setSubmitting] = useState(false);
 
-  const isEmailValid = draft.email.toLowerCase().trim().endsWith(EMAIL_DOMAIN) && draft.email.length > EMAIL_DOMAIN.length;
+  useEffect(() => {
+    loadInterests();
+  }, [loadInterests]);
+
+  const isEmailValid =
+    draft.email.toLowerCase().trim().endsWith(EMAIL_DOMAIN) && draft.email.length > EMAIL_DOMAIN.length;
 
   const isFormComplete = useMemo(
     () =>
+      draft.name.trim().length > 1 &&
       isEmailValid &&
+      draft.password.length >= 8 &&
       !!draft.faculty &&
-      career.trim().length > 0 &&
+      !!draft.career &&
+      draft.career.trim().length > 0 &&
       !!draft.semester &&
       draft.interestIds.length > 0 &&
       draft.lookingFor.length > 0,
-    [isEmailValid, draft.faculty, career, draft.semester, draft.interestIds, draft.lookingFor]
+    [isEmailValid, draft]
   );
 
-  function handleSubmit() {
-    if (!isFormComplete || !draft.faculty || !draft.semester) return;
-    setAcademicProfile(draft.faculty, career, draft.semester);
-    completeOnboarding();
-    router.replace('/(tabs)/mapa');
+  async function handleSubmit() {
+    if (!isFormComplete || submitting) return;
+    setSubmitting(true);
+    try {
+      await completeOnboarding();
+      router.replace('/(tabs)/mapa');
+    } catch (err) {
+      Alert.alert('No se pudo completar el registro', err instanceof Error ? err.message : undefined);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -83,12 +101,25 @@ export default function OnboardingScreen() {
             Verifica tu correo institucional
           </Text>
           <Input
+            label="Nombre completo"
+            placeholder="Alejandro Martínez"
+            value={draft.name}
+            onChangeText={(name) => setDraftField('name', name)}
+          />
+          <Input
             label="Correo UJAP"
             placeholder="tu.nombre@ujap.edu.ve"
             autoCapitalize="none"
             keyboardType="email-address"
             value={draft.email}
-            onChangeText={setEmail}
+            onChangeText={(email) => setDraftField('email', email)}
+          />
+          <Input
+            label="Contraseña"
+            placeholder="Mínimo 8 caracteres"
+            secureTextEntry
+            value={draft.password}
+            onChangeText={(password) => setDraftField('password', password)}
           />
           <View className="flex-row items-center">
             <MaterialIcons
@@ -115,12 +146,17 @@ export default function OnboardingScreen() {
               key={faculty}
               label={faculty}
               selected={draft.faculty === faculty}
-              onPress={() => setAcademicProfile(faculty, career, draft.semester ?? 1)}
+              onPress={() => setDraftField('faculty', faculty)}
             />
           ))}
         </View>
 
-        <Input label="Carrera" placeholder="Ingeniería en Computación" value={career} onChangeText={setCareer} />
+        <Input
+          label="Carrera"
+          placeholder="Ingeniería en Computación"
+          value={draft.career ?? ''}
+          onChangeText={(career) => setDraftField('career', career)}
+        />
 
         <Text className="text-on-surface-variant mb-2" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>
           SEMESTRE
@@ -129,7 +165,7 @@ export default function OnboardingScreen() {
           {semesterOptions.map((semester) => (
             <Pressable
               key={semester}
-              onPress={() => draft.faculty && setAcademicProfile(draft.faculty, career, semester)}
+              onPress={() => setDraftField('semester', semester)}
               className={`flex-1 items-center justify-center rounded-full py-3 ${
                 draft.semester === semester ? 'bg-primary' : 'bg-surface-container'
               }`}
@@ -153,7 +189,7 @@ export default function OnboardingScreen() {
           multiline
           numberOfLines={3}
           value={draft.bio}
-          onChangeText={setBio}
+          onChangeText={(bio) => setDraftField('bio', bio)}
           style={{ minHeight: 80, textAlignVertical: 'top' }}
         />
 
@@ -186,7 +222,20 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <Button label="Entrar a Epa" onPress={handleSubmit} disabled={!isFormComplete} />
+        <Button
+          label={submitting ? 'Creando tu cuenta...' : 'Entrar a Epa'}
+          onPress={handleSubmit}
+          disabled={!isFormComplete || submitting}
+          loading={submitting}
+        />
+
+        <Text
+          className="text-primary text-center mt-6"
+          style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}
+          onPress={() => router.push('/login')}
+        >
+          ¿Ya tienes cuenta? Inicia sesión
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

@@ -40,7 +40,11 @@ export async function loginHandler(req: Request, res: Response) {
 
 export async function meHandler(req: Request, res: Response) {
   const user = await authService.getMe(req.userId!);
-  res.json(sanitizeUser(user));
+  const { _count, ...rest } = user;
+  res.json({
+    ...sanitizeUser(rest),
+    stats: { plansCreated: _count.createdPlans, attendances: _count.planAttendances },
+  });
 }
 
 const facultyEnum = z.enum([

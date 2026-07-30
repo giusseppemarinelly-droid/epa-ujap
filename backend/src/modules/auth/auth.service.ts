@@ -99,7 +99,10 @@ export async function updateProfile(userId: string, data: ProfileUpdateInput) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { interests: { include: { interest: true } } },
+    include: {
+      interests: { include: { interest: true } },
+      _count: { select: { createdPlans: true, planAttendances: true } },
+    },
   });
   if (!user) {
     throw new HttpError(404, 'Usuario no encontrado');

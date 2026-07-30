@@ -1,10 +1,19 @@
 import { create } from 'zustand';
 
-import { currentUserId, users } from '@/src/mocks';
-import type { Faculty, LookingFor, User } from '@/src/types';
+import { apiRequest, ApiError } from '@/src/lib/api';
+import {
+  facultyToBackend,
+  lookingForToBackend,
+  mapUserFromBackend,
+  type BackendUser,
+} from '@/src/lib/enumMappers';
+import { clearToken, getToken, setToken } from '@/src/lib/secureStorage';
+import type { Faculty, Interest, LookingFor, User } from '@/src/types';
 
 type OnboardingDraft = {
+  name: string;
   email: string;
+  password: string;
   faculty?: Faculty;
   career?: string;
   semester?: number;
@@ -13,26 +22,67 @@ type OnboardingDraft = {
   lookingFor: LookingFor[];
 };
 
+type AuthStatus = 'checking' | 'signed-out' | 'signed-in';
+
 type AuthState = {
-  isVerified: boolean;
-  currentUser: User;
+  status: AuthStatus;
+  currentUser: User | null;
   draft: OnboardingDraft;
-  setEmail: (email: string) => void;
-  setAcademicProfile: (faculty: Faculty, career: string, semester: number) => void;
-  setBio: (bio: string) => void;
+  interests: Interest[];
+  error: string | null;
+
+  restoreSession: () => Promise<void>;
+  loadInterests: () => Promise<void>;
+  setDraftField: <K extends keyof OnboardingDraft>(key: K, value: OnboardingDraft[K]) => void;
   toggleInterest: (interestId: string) => void;
   toggleLookingFor: (value: LookingFor) => void;
-  completeOnboarding: () => void;
+  completeOnboarding: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  isVerified: false,
-  currentUser: users.find((user) => user.id === currentUserId)!,
-  draft: { email: '', bio: '', interestIds: [], lookingFor: [] },
-  setEmail: (email) => set((state) => ({ draft: { ...state.draft, email } })),
-  setAcademicProfile: (faculty, career, semester) =>
-    set((state) => ({ draft: { ...state.draft, faculty, career, semester } })),
-  setBio: (bio) => set((state) => ({ draft: { ...state.draft, bio } })),
+const emptyDraft: OnboardingDraft = {
+  name: '',
+  email: '',
+  password: '',
+  bio: '',
+  interestIds: [],
+  lookingFor: [],
+};
+
+function errorMessage(err: unknown, fallback: string) {
+  return err instanceof ApiError ? err.message : fallback;
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  status: 'checking',
+  currentUser: null,
+  draft: emptyDraft,
+  interests: [],
+  error: null,
+
+  restoreSession: async () => {
+    const token = await getToken();
+    if (!token) {
+      set({ status: 'signed-out' });
+      return;
+    }
+    try {
+      const raw = await apiRequest<BackendUser>('/auth/me');
+      set({ currentUser: mapUserFromBackend(raw), status: 'signed-in' });
+    } catch {
+      await clearToken();
+      set({ status: 'signed-out' });
+    }
+  },
+
+  loadInterests: async () => {
+    const interests = await apiRequest<Interest[]>('/interests', { auth: false });
+    set({ interests });
+  },
+
+  setDraftField: (key, value) => set((state) => ({ draft: { ...state.draft, [key]: value } })),
+
   toggleInterest: (interestId) =>
     set((state) => {
       const isSelected = state.draft.interestIds.includes(interestId);
@@ -45,6 +95,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         },
       };
     }),
+
   toggleLookingFor: (value) =>
     set((state) => {
       const isSelected = state.draft.lookingFor.includes(value);
@@ -57,5 +108,70 @@ export const useAuthStore = create<AuthState>((set) => ({
         },
       };
     }),
-  completeOnboarding: () => set({ isVerified: true }),
+
+  // Encadena signup -> verify (con el token que devuelve la API, ya que no
+  // se envía correo real) -> login -> perfil académico, todo en un solo
+  // paso desde el formulario único de onboarding.
+  completeOnboarding: async () => {
+    const draft = get().draft;
+    set({ error: null });
+
+    try {
+      const { verificationToken } = await apiRequest<{ userId: string; verificationToken: string }>(
+        '/auth/signup',
+        { method: 'POST', auth: false, body: { email: draft.email, password: draft.password, name: draft.name } }
+      );
+
+      await apiRequest('/auth/verify', {
+        method: 'POST',
+        auth: false,
+        body: { email: draft.email, token: verificationToken },
+      });
+
+      const loginResult = await apiRequest<{ token: string; user: BackendUser }>('/auth/login', {
+        method: 'POST',
+        auth: false,
+        body: { email: draft.email, password: draft.password },
+      });
+      await setToken(loginResult.token);
+
+      const updated = await apiRequest<BackendUser>('/auth/me', {
+        method: 'PATCH',
+        body: {
+          faculty: draft.faculty ? facultyToBackend[draft.faculty] : undefined,
+          career: draft.career,
+          semester: draft.semester,
+          bio: draft.bio,
+          interestIds: draft.interestIds,
+          lookingFor: draft.lookingFor.map((value) => lookingForToBackend[value]),
+        },
+      });
+
+      set({ currentUser: mapUserFromBackend(updated), status: 'signed-in', draft: emptyDraft });
+    } catch (err) {
+      set({ error: errorMessage(err, 'No se pudo completar el registro') });
+      throw err;
+    }
+  },
+
+  login: async (email, password) => {
+    set({ error: null });
+    try {
+      const result = await apiRequest<{ token: string; user: BackendUser }>('/auth/login', {
+        method: 'POST',
+        auth: false,
+        body: { email, password },
+      });
+      await setToken(result.token);
+      set({ currentUser: mapUserFromBackend(result.user), status: 'signed-in' });
+    } catch (err) {
+      set({ error: errorMessage(err, 'No se pudo iniciar sesión') });
+      throw err;
+    }
+  },
+
+  logout: async () => {
+    await clearToken();
+    set({ currentUser: null, status: 'signed-out', draft: emptyDraft });
+  },
 }));

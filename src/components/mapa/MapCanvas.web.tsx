@@ -1,8 +1,28 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View } from 'react-native';
+import { MapContainer, Marker, TileLayer } from 'react-leaflet';
+import L from 'leaflet';
 
 import { colors } from '@/src/theme/tokens';
 import type { Plan } from '@/src/types';
+
+const UJAP_CENTER: [number, number] = [10.2167, -68.0092];
+
+function createMarkerIcon(selected: boolean) {
+  const size = selected ? 40 : 30;
+  return L.divIcon({
+    className: 'epa-plan-marker',
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 9999px;
+      background: ${colors.primary};
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    "></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
 
 type MapCanvasProps = {
   plans: Plan[];
@@ -10,32 +30,30 @@ type MapCanvasProps = {
   onSelectPlan: (id: string) => void;
 };
 
-// react-native-maps no tiene implementación web. Aquí se muestra la lista de
-// planes en su lugar; el mapa interactivo completo vive en la app móvil.
+// Mapa real e interactivo en web con Leaflet + OpenStreetMap (react-native-maps
+// no tiene build para web). Gratis, sin API key, con calles, zoom y arrastre.
 export function MapCanvas({ plans, selectedPlanId, onSelectPlan }: MapCanvasProps) {
   return (
-    <ScrollView className="flex-1 bg-surface-container px-margin-mobile" contentContainerStyle={{ paddingTop: 96, paddingBottom: 120 }}>
-      <View className="flex-row items-center mb-4">
-        <MaterialIcons name="phone-iphone" size={16} color={colors['on-surface-variant']} />
-        <Text className="text-on-surface-variant ml-2 flex-1" style={{ fontSize: 12 }}>
-          El mapa interactivo está disponible en la app móvil. Aquí tienes la lista de planes.
-        </Text>
-      </View>
-      {plans.map((plan) => (
-        <Pressable
-          key={plan.id}
-          onPress={() => onSelectPlan(plan.id)}
-          className="bg-surface-container-lowest rounded-md p-4 mb-3"
-          style={{ borderWidth: 2, borderColor: plan.id === selectedPlanId ? colors.primary : 'transparent' }}
-        >
-          <Text className="text-on-surface" style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}>
-            {plan.title}
-          </Text>
-          <Text className="text-on-surface-variant mt-1" style={{ fontSize: 13 }}>
-            {plan.location.address}
-          </Text>
-        </Pressable>
-      ))}
-    </ScrollView>
+    <View style={{ flex: 1 }}>
+      <MapContainer
+        center={UJAP_CENTER}
+        zoom={16}
+        style={{ height: '100%', width: '100%' }}
+        scrollWheelZoom
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {plans.map((plan) => (
+          <Marker
+            key={plan.id}
+            position={[plan.location.lat, plan.location.lng]}
+            icon={createMarkerIcon(plan.id === selectedPlanId)}
+            eventHandlers={{ click: () => onSelectPlan(plan.id) }}
+          />
+        ))}
+      </MapContainer>
+    </View>
   );
 }

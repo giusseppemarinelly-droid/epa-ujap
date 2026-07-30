@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,8 +12,13 @@ import { colors, epaGradient, radii } from '@/src/theme/tokens';
 
 export default function MapaScreen() {
   const plans = usePlansStore((state) => state.plans);
+  const fetchPlans = usePlansStore((state) => state.fetchPlans);
   const currentUser = useAuthStore((state) => state.currentUser);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
 
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
 
@@ -23,7 +28,7 @@ export default function MapaScreen() {
 
       <SafeAreaView edges={['top']} className="absolute top-0 left-0 right-0">
         <View className="flex-row items-center px-margin-mobile py-3">
-          <Avatar uri={currentUser.photoUrl} size={36} />
+          <Avatar uri={currentUser?.photoUrl} size={36} />
           <Text
             className="text-on-surface ml-2 flex-1"
             style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}

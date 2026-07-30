@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Chip } from '@/src/components/ui';
-import { interests as allInterests } from '@/src/mocks';
+import { useAuthStore } from '@/src/store';
 import { colors, elevation } from '@/src/theme/tokens';
 import type { User } from '@/src/types';
 
@@ -12,6 +12,7 @@ type DiscoverCardProps = {
 };
 
 export function DiscoverCard({ user }: DiscoverCardProps) {
+  const allInterests = useAuthStore((state) => state.interests);
   const userInterests = allInterests.filter((interest) => user.interestIds.includes(interest.id));
 
   return (

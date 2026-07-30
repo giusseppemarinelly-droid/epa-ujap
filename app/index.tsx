@@ -3,7 +3,7 @@ import { Redirect } from 'expo-router';
 import { useAuthStore } from '@/src/store';
 
 export default function Index() {
-  const isVerified = useAuthStore((state) => state.isVerified);
+  const status = useAuthStore((state) => state.status);
 
-  return <Redirect href={isVerified ? '/(tabs)/mapa' : '/onboarding'} />;
+  return <Redirect href={status === 'signed-in' ? '/(tabs)/mapa' : '/onboarding'} />;
 }

@@ -12,6 +12,7 @@ import {
   Inter_800ExtraBold,
 } from '@expo-google-fonts/inter';
 
+import { useAuthStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -23,14 +24,22 @@ export default function RootLayout() {
     Inter_700Bold,
     Inter_800ExtraBold,
   });
+  const authStatus = useAuthStore((state) => state.status);
+  const restoreSession = useAuthStore((state) => state.restoreSession);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    restoreSession();
+  }, [restoreSession]);
+
+  const ready = fontsLoaded && authStatus !== 'checking';
+
+  useEffect(() => {
+    if (ready) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [ready]);
 
-  if (!fontsLoaded) {
+  if (!ready) {
     return null;
   }
 

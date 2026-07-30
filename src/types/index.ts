@@ -35,9 +35,16 @@ export type PlanCategory = 'deportes' | 'estudio' | 'comida' | 'proyectos' | 'cu
 
 export type PlanStatus = 'programado' | 'en_curso' | 'finalizado';
 
+export type PersonSummary = {
+  id: string;
+  name: string;
+  photoUrl?: string;
+};
+
 export type Plan = {
   id: string;
   creatorId: string;
+  creator?: PersonSummary;
   title: string;
   description: string;
   category: PlanCategory;
@@ -51,6 +58,7 @@ export type Plan = {
   status: PlanStatus;
   isPublic: boolean;
   attendeeIds: string[];
+  attendees?: PersonSummary[];
 };
 
 export type GroupCategory = 'Académico' | 'Deportes' | 'Tecnología' | 'Creatividad' | 'Arte';
@@ -74,6 +82,8 @@ export type Conversation = {
   avatarUrl?: string;
   participantIds: string[];
   unreadCount: number;
+  lastMessageText?: string;
+  lastMessageAt?: string;
 };
 
 export type Message = {

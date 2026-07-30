@@ -6,10 +6,12 @@ import express from 'express';
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
+import { connectionsRouter } from './modules/connections/connections.routes';
 import { conversationsRouter } from './modules/conversations/conversations.routes';
 import { groupsRouter } from './modules/groups/groups.routes';
 import { interestsRouter } from './modules/interests/interests.routes';
 import { plansRouter } from './modules/plans/plans.routes';
+import { usersRouter } from './modules/users/users.routes';
 
 const app = express();
 const publicWebDir = path.join(__dirname, '..', 'public-web');
@@ -24,6 +26,8 @@ app.use('/interests', interestsRouter);
 app.use('/plans', plansRouter);
 app.use('/groups', groupsRouter);
 app.use('/conversations', conversationsRouter);
+app.use('/users', usersRouter);
+app.use('/connections', connectionsRouter);
 
 // Sirve el build web de la app (PWA para "Agregar a inicio" en iOS) desde
 // el mismo servidor que la API.

@@ -2,8 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar, Button, Card } from '@/src/components/ui';
-import { currentUserId, users } from '@/src/mocks';
-import { usePlansStore } from '@/src/store';
+import { useAuthStore, usePlansStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { Plan } from '@/src/types';
 
@@ -14,9 +13,9 @@ type PlanDetailCardProps = {
 
 export function PlanDetailCard({ plan, onClose }: PlanDetailCardProps) {
   const joinPlan = usePlansStore((state) => state.joinPlan);
-  const creator = users.find((user) => user.id === plan.creatorId);
-  const attendees = users.filter((user) => plan.attendeeIds.includes(user.id));
-  const alreadyJoined = plan.attendeeIds.includes(currentUserId);
+  const currentUser = useAuthStore((state) => state.currentUser);
+  const attendees = plan.attendees ?? [];
+  const alreadyJoined = !!currentUser && plan.attendeeIds.includes(currentUser.id);
   const time = new Date(plan.dateTime).toLocaleTimeString('es-VE', {
     hour: 'numeric',
     minute: '2-digit',
@@ -46,10 +45,10 @@ export function PlanDetailCard({ plan, onClose }: PlanDetailCardProps) {
       </View>
 
       <View className="flex-row items-center mt-3">
-        <Avatar uri={creator?.photoUrl} size={32} />
+        <Avatar uri={plan.creator?.photoUrl} size={32} />
         <View className="ml-2 flex-1">
           <Text className="text-on-surface" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
-            {creator?.name}
+            {plan.creator?.name}
           </Text>
           <Text className="text-on-surface-variant" style={{ fontSize: 12 }}>
             Creador · {time}

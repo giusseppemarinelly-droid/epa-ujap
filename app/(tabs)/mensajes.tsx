@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ConversationRow } from '@/src/components/mensajes/ConversationRow';
-import { conversations, messages } from '@/src/mocks';
+import { useAuthStore, useConversationsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 type Tab = 'individual' | 'grupal';
@@ -15,8 +15,16 @@ const TABS: { value: Tab; label: string }[] = [
 ];
 
 export default function MensajesScreen() {
+  const currentUserId = useAuthStore((state) => state.currentUser?.id);
+  const conversations = useConversationsStore((state) => state.conversations);
+  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
+
   const [tab, setTab] = useState<Tab>('individual');
   const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    if (currentUserId) fetchConversations(currentUserId);
+  }, [currentUserId, fetchConversations]);
 
   const filtered = useMemo(() => {
     const byTab = conversations.filter((conversation) =>
@@ -24,7 +32,7 @@ export default function MensajesScreen() {
     );
     const q = query.trim().toLowerCase();
     return q ? byTab.filter((conversation) => conversation.title.toLowerCase().includes(q)) : byTab;
-  }, [tab, query]);
+  }, [tab, query, conversations]);
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
@@ -73,17 +81,14 @@ export default function MensajesScreen() {
         data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
-        renderItem={({ item }) => {
-          const lastMessage = messages.find((message) => message.conversationId === item.id);
-          return (
-            <ConversationRow
-              conversation={item}
-              lastMessage={lastMessage?.text}
-              lastMessageAt={lastMessage?.sentAt}
-              onPress={() => Alert.alert(item.title, 'El chat se abre próximamente.')}
-            />
-          );
-        }}
+        renderItem={({ item }) => (
+          <ConversationRow
+            conversation={item}
+            lastMessage={item.lastMessageText}
+            lastMessageAt={item.lastMessageAt}
+            onPress={() => Alert.alert(item.title, 'El chat se abre próximamente.')}
+          />
+        )}
         ListEmptyComponent={
           <View className="items-center mt-10">
             <MaterialIcons name="forum" size={40} color={colors['on-surface-variant']} />

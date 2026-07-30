@@ -2,9 +2,8 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button, Chip, Input } from '@/src/components/ui';
-import { interests as allInterests } from '@/src/mocks';
 import { colors } from '@/src/theme/tokens';
-import type { Faculty } from '@/src/types';
+import type { Faculty, Interest } from '@/src/types';
 
 const faculties: Faculty[] = [
   'Ingeniería',
@@ -25,11 +24,12 @@ export type DiscoverFilters = {
 type FiltersSheetProps = {
   visible: boolean;
   filters: DiscoverFilters;
+  interests: Interest[];
   onChange: (filters: DiscoverFilters) => void;
   onClose: () => void;
 };
 
-export function FiltersSheet({ visible, filters, onChange, onClose }: FiltersSheetProps) {
+export function FiltersSheet({ visible, filters, interests: allInterests, onChange, onClose }: FiltersSheetProps) {
   function toggleInterest(interestId: string) {
     const isSelected = filters.interestIds.includes(interestId);
     onChange({

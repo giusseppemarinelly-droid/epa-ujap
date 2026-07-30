@@ -1,15 +1,26 @@
+import { useEffect } from 'react';
 import { Alert, Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar, Badge, Button, Card, Chip } from '@/src/components/ui';
-import { interests as allInterests } from '@/src/mocks';
 import { useAuthStore, useGroupsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 export default function PerfilScreen() {
   const currentUser = useAuthStore((state) => state.currentUser);
+  const allInterests = useAuthStore((state) => state.interests);
+  const logout = useAuthStore((state) => state.logout);
   const groups = useGroupsStore((state) => state.groups);
+  const fetchGroups = useGroupsStore((state) => state.fetchGroups);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  if (!currentUser) {
+    return null;
+  }
 
   const myInterests = allInterests.filter((interest) => currentUser.interestIds.includes(interest.id));
   const myGroups = groups.filter((group) => group.memberIds.includes(currentUser.id));
@@ -113,11 +124,12 @@ export default function PerfilScreen() {
           )}
         </View>
 
-        <View className="px-margin-mobile mt-4">
+        <View className="px-margin-mobile mt-4 gap-3">
           <Button
             label="Editar perfil"
             onPress={() => Alert.alert('Próximamente', 'Muy pronto vas a poder editar tu perfil.')}
           />
+          <Button label="Cerrar sesión" variant="ghost" onPress={logout} />
         </View>
       </ScrollView>
     </SafeAreaView>

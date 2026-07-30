@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -6,8 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { FeaturedGroupBanner } from '@/src/components/grupos/FeaturedGroupBanner';
 import { GroupCard } from '@/src/components/grupos/GroupCard';
 import { Button, Card, Chip } from '@/src/components/ui';
-import { currentUserId } from '@/src/mocks';
-import { useGroupsStore } from '@/src/store';
+import { useAuthStore, useGroupsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { GroupCategory } from '@/src/types';
 
@@ -15,10 +14,16 @@ const categories: GroupCategory[] = ['Académico', 'Deportes', 'Tecnología', 'C
 
 export default function GruposScreen() {
   const groups = useGroupsStore((state) => state.groups);
+  const fetchGroups = useGroupsStore((state) => state.fetchGroups);
   const joinGroup = useGroupsStore((state) => state.joinGroup);
   const leaveGroup = useGroupsStore((state) => state.leaveGroup);
+  const currentUserId = useAuthStore((state) => state.currentUser?.id);
 
   const [activeCategory, setActiveCategory] = useState<GroupCategory | 'Todos'>('Todos');
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
   const featuredGroup = groups.find((group) => group.featured);
   const otherGroups = useMemo(
@@ -29,8 +34,12 @@ export default function GruposScreen() {
     [groups, activeCategory]
   );
 
-  function toggleMembership(groupId: string, isMember: boolean) {
-    if (isMember) {
+  function isMember(group: { memberIds: string[] }) {
+    return !!currentUserId && group.memberIds.includes(currentUserId);
+  }
+
+  function toggleMembership(groupId: string, memberAlready: boolean) {
+    if (memberAlready) {
       leaveGroup(groupId);
     } else {
       joinGroup(groupId);
@@ -57,10 +66,8 @@ export default function GruposScreen() {
         {featuredGroup && (
           <FeaturedGroupBanner
             group={featuredGroup}
-            isMember={featuredGroup.memberIds.includes(currentUserId)}
-            onToggleMembership={() =>
-              toggleMembership(featuredGroup.id, featuredGroup.memberIds.includes(currentUserId))
-            }
+            isMember={isMember(featuredGroup)}
+            onToggleMembership={() => toggleMembership(featuredGroup.id, isMember(featuredGroup))}
           />
         )}
 
@@ -76,17 +83,14 @@ export default function GruposScreen() {
           ))}
         </View>
 
-        {otherGroups.map((group) => {
-          const isMember = group.memberIds.includes(currentUserId);
-          return (
-            <GroupCard
-              key={group.id}
-              group={group}
-              isMember={isMember}
-              onToggleMembership={() => toggleMembership(group.id, isMember)}
-            />
-          );
-        })}
+        {otherGroups.map((group) => (
+          <GroupCard
+            key={group.id}
+            group={group}
+            isMember={isMember(group)}
+            onToggleMembership={() => toggleMembership(group.id, isMember(group))}
+          />
+        ))}
 
         <Card className="items-center mt-4">
           <MaterialIcons name="groups" size={28} color={colors.primary} />
