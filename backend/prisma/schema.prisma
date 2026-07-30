@@ -79,6 +79,7 @@ model User {
   semester          Int?
   bio               String?
   photoUrl          String?
+  photos            String[]     @default([])
   verified          Boolean      @default(false)
   verificationToken String?
   isOrganizer       Boolean      @default(false)

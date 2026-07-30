@@ -5,6 +5,7 @@ import { HttpError } from '../../middleware/errorHandler';
 
 const groupWithRelations = {
   members: { include: { user: true } },
+  conversation: { select: { id: true } },
 } as const;
 
 export async function listGroups(category?: GroupCategory) {
@@ -32,9 +33,40 @@ type CreateGroupInput = {
 
 export async function createGroup(creatorId: string, data: CreateGroupInput) {
   return prisma.group.create({
-    data: { ...data, creatorId, members: { create: { userId: creatorId } } },
+    data: {
+      ...data,
+      creatorId,
+      members: { create: { userId: creatorId } },
+      conversation: {
+        create: {
+          type: 'GRUPO',
+          title: data.name,
+          participants: { create: { userId: creatorId } },
+        },
+      },
+    },
     include: groupWithRelations,
   });
+}
+
+async function syncConversationParticipant(groupId: string, userId: string, action: 'add' | 'remove') {
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    select: { conversation: { select: { id: true } } },
+  });
+  if (!group?.conversation) return;
+
+  if (action === 'add') {
+    await prisma.conversationParticipant.upsert({
+      where: { conversationId_userId: { conversationId: group.conversation.id, userId } },
+      update: {},
+      create: { conversationId: group.conversation.id, userId },
+    });
+  } else {
+    await prisma.conversationParticipant.deleteMany({
+      where: { conversationId: group.conversation.id, userId },
+    });
+  }
 }
 
 export async function joinGroup(groupId: string, userId: string) {
@@ -43,10 +75,12 @@ export async function joinGroup(groupId: string, userId: string) {
     update: {},
     create: { groupId, userId },
   });
+  await syncConversationParticipant(groupId, userId, 'add');
   return getGroup(groupId);
 }
 
 export async function leaveGroup(groupId: string, userId: string) {
   await prisma.groupMember.deleteMany({ where: { groupId, userId } });
+  await syncConversationParticipant(groupId, userId, 'remove');
   return getGroup(groupId);
 }

@@ -12,7 +12,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
+          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, shrink-to-fit=no, viewport-fit=cover, user-scalable=no"
         />
         <title>Epa — El punto de encuentro de la UJAP</title>
         <meta name="description" content="Epa, la app social de la comunidad UJAP." />
@@ -33,6 +33,43 @@ export default function Root({ children }: PropsWithChildren) {
         />
 
         <ScrollViewStyleReset />
+
+        {/* Que el PWA se sienta como app instalada y no como Safari: sin
+            rebote de scroll, sin zoom por pellizco/doble-tap, sin selección
+            de texto ni menú de "copiar/guardar imagen" al mantener presionado,
+            sin resaltado azul al tocar. Los campos de texto siguen
+            seleccionables para poder pegar/copiar en ellos. */}
+        <style
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `
+              html, body {
+                overscroll-behavior: none;
+                overflow: hidden;
+                position: fixed;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+              }
+              #root {
+                overscroll-behavior: none;
+              }
+              * {
+                -webkit-tap-highlight-color: transparent;
+                -webkit-touch-callout: none;
+              }
+              body, div, span, p, h1, h2, h3, h4, h5, h6, button {
+                -webkit-user-select: none;
+                user-select: none;
+                touch-action: manipulation;
+              }
+              input, textarea {
+                -webkit-user-select: text;
+                user-select: text;
+              }
+            `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

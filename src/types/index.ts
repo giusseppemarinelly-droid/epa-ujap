@@ -21,6 +21,7 @@ export type User = {
   semester: number;
   bio: string;
   photoUrl?: string;
+  photos: string[];
   verified: boolean;
   isOrganizer: boolean;
   interestIds: string[];
@@ -70,7 +71,9 @@ export type Group = {
   description: string;
   imageUrl?: string;
   memberIds: string[];
+  members?: PersonSummary[];
   featured: boolean;
+  conversationId?: string;
 };
 
 export type ConversationType = 'directa' | 'plan' | 'grupo';

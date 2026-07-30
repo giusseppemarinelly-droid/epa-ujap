@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Button, Chip, Input } from '@/src/components/ui';
 import { useAuthStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { Faculty, LookingFor } from '@/src/types';
+
+const MAX_PHOTOS = 6;
 
 const faculties: Faculty[] = [
   'Ingeniería',
@@ -31,6 +34,10 @@ export default function EditProfileScreen() {
   const currentUser = useAuthStore((state) => state.currentUser);
   const interests = useAuthStore((state) => state.interests);
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const addGalleryPhoto = useAuthStore((state) => state.addGalleryPhoto);
+  const removeGalleryPhoto = useAuthStore((state) => state.removeGalleryPhoto);
+
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const [name, setName] = useState(currentUser?.name ?? '');
   const [bio, setBio] = useState(currentUser?.bio ?? '');
@@ -47,6 +54,54 @@ export default function EditProfileScreen() {
 
   function toggleLookingFor(value: LookingFor) {
     setLookingFor((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
+  }
+
+  async function handleAddPhoto() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permiso necesario', 'Epa necesita acceso a tus fotos para agregarlas a tu perfil.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [3, 4],
+      quality: 0.4,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets[0]?.base64) return;
+
+    const asset = result.assets[0];
+    setPhotoBusy(true);
+    try {
+      await addGalleryPhoto(asset.base64!, asset.mimeType ?? 'image/jpeg');
+    } catch (err) {
+      Alert.alert('No se pudo subir la foto', err instanceof Error ? err.message : undefined);
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  function handleRemovePhoto(photoUrl: string) {
+    Alert.alert('Quitar foto', '¿Quitar esta foto de tu perfil?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Quitar',
+        style: 'destructive',
+        onPress: async () => {
+          setPhotoBusy(true);
+          try {
+            await removeGalleryPhoto(photoUrl);
+          } catch (err) {
+            Alert.alert('No se pudo quitar', err instanceof Error ? err.message : undefined);
+          } finally {
+            setPhotoBusy(false);
+          }
+        },
+      },
+    ]);
   }
 
   async function handleSubmit() {
@@ -73,6 +128,48 @@ export default function EditProfileScreen() {
             Editar perfil
           </Text>
         </View>
+
+        <Text
+          className="text-on-surface-variant mb-2"
+          style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}
+        >
+          TUS FOTOS ({(currentUser?.photos.length ?? 0)}/{MAX_PHOTOS})
+        </Text>
+        <View className="flex-row flex-wrap gap-2 mb-6">
+          {(currentUser?.photos ?? []).map((photo) => (
+            <Pressable
+              key={photo}
+              onPress={() => handleRemovePhoto(photo)}
+              disabled={photoBusy}
+              style={{ width: 84, height: 112 }}
+            >
+              <Image source={{ uri: photo }} style={{ width: '100%', height: '100%', borderRadius: 12 }} />
+              <View
+                className="absolute top-1 right-1 items-center justify-center rounded-full bg-ujap-navy"
+                style={{ width: 22, height: 22 }}
+              >
+                <MaterialIcons name="close" size={14} color="#FFFFFF" />
+              </View>
+            </Pressable>
+          ))}
+          {(currentUser?.photos.length ?? 0) < MAX_PHOTOS && (
+            <Pressable
+              onPress={handleAddPhoto}
+              disabled={photoBusy}
+              className="items-center justify-center rounded-md bg-surface-container"
+              style={{ width: 84, height: 112 }}
+            >
+              {photoBusy ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <MaterialIcons name="add-a-photo" size={26} color={colors['on-surface-variant']} />
+              )}
+            </Pressable>
+          )}
+        </View>
+        <Text className="text-on-surface-variant mb-6" style={{ fontSize: 12 }}>
+          Estas fotos son las que ven los demás en Descubrir. La primera es tu foto principal.
+        </Text>
 
         <Input label="Nombre" value={name} onChangeText={setName} />
         <Input

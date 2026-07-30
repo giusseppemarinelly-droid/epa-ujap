@@ -1,4 +1,4 @@
-import { ImageBackground, Text, View } from 'react-native';
+import { ImageBackground, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/src/components/ui';
 import { elevation, radii } from '@/src/theme/tokens';
@@ -7,12 +7,13 @@ import type { Group } from '@/src/types';
 type FeaturedGroupBannerProps = {
   group: Group;
   isMember: boolean;
+  onPress: () => void;
   onToggleMembership: () => void;
 };
 
-export function FeaturedGroupBanner({ group, isMember, onToggleMembership }: FeaturedGroupBannerProps) {
+export function FeaturedGroupBanner({ group, isMember, onPress, onToggleMembership }: FeaturedGroupBannerProps) {
   return (
-    <View className="rounded-lg overflow-hidden mb-6" style={elevation.card}>
+    <Pressable onPress={onPress} className="rounded-lg overflow-hidden mb-6" style={elevation.card}>
       <ImageBackground
         source={group.imageUrl ? { uri: group.imageUrl } : undefined}
         style={{ padding: 20, minHeight: 160, justifyContent: 'flex-end' }}
@@ -44,6 +45,6 @@ export function FeaturedGroupBanner({ group, isMember, onToggleMembership }: Fea
           disabled={isMember}
         />
       </ImageBackground>
-    </View>
+    </Pressable>
   );
 }

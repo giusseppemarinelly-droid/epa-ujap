@@ -79,6 +79,7 @@ export type BackendUser = {
   semester: number | null;
   bio: string | null;
   photoUrl: string | null;
+  photos: string[];
   verified: boolean;
   isOrganizer: boolean;
   lookingFor: string[];
@@ -97,6 +98,7 @@ export function mapUserFromBackend(raw: BackendUser): User {
     semester: raw.semester ?? 1,
     bio: raw.bio ?? '',
     photoUrl: raw.photoUrl ?? undefined,
+    photos: raw.photos.length > 0 ? raw.photos : raw.photoUrl ? [raw.photoUrl] : [],
     verified: raw.verified,
     isOrganizer: raw.isOrganizer,
     interestIds: raw.interests?.map((entry) => entry.interest.id) ?? [],
@@ -153,7 +155,8 @@ export type BackendGroup = {
   description: string;
   imageUrl: string | null;
   featured: boolean;
-  members: { userId: string }[];
+  members: { userId: string; user: BackendPersonSummary }[];
+  conversation: { id: string } | null;
 };
 
 export function mapGroupFromBackend(raw: BackendGroup): Group {
@@ -164,7 +167,9 @@ export function mapGroupFromBackend(raw: BackendGroup): Group {
     description: raw.description,
     imageUrl: raw.imageUrl ?? undefined,
     memberIds: raw.members.map((member) => member.userId),
+    members: raw.members.map((member) => mapPersonSummary(member.user)),
     featured: raw.featured,
+    conversationId: raw.conversation?.id,
   };
 }
 

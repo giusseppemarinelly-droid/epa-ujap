@@ -84,3 +84,17 @@ export async function uploadPhotoHandler(req: Request, res: Response) {
   const user = await authService.uploadProfilePhoto(req.userId!, imageBase64, mimeType);
   res.json(sanitizeUser(user));
 }
+
+export async function addGalleryPhotoHandler(req: Request, res: Response) {
+  const { imageBase64, mimeType } = uploadPhotoSchema.parse(req.body);
+  const user = await authService.addGalleryPhoto(req.userId!, imageBase64, mimeType);
+  res.status(201).json(sanitizeUser(user));
+}
+
+const removeGalleryPhotoSchema = z.object({ photoUrl: z.string().url() });
+
+export async function removeGalleryPhotoHandler(req: Request, res: Response) {
+  const { photoUrl } = removeGalleryPhotoSchema.parse(req.body);
+  const user = await authService.removeGalleryPhoto(req.userId!, photoUrl);
+  res.json(sanitizeUser(user));
+}

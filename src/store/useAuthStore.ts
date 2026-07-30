@@ -51,6 +51,8 @@ type AuthState = {
     lookingFor?: LookingFor[];
   }) => Promise<void>;
   uploadPhoto: (imageBase64: string, mimeType: string) => Promise<void>;
+  addGalleryPhoto: (imageBase64: string, mimeType: string) => Promise<void>;
+  removeGalleryPhoto: (photoUrl: string) => Promise<void>;
 };
 
 const emptyDraft: OnboardingDraft = {
@@ -203,6 +205,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const updated = await apiRequest<BackendUser>('/auth/me/photo', {
       method: 'POST',
       body: { imageBase64, mimeType },
+    });
+    set({ currentUser: mapUserFromBackend(updated) });
+  },
+
+  addGalleryPhoto: async (imageBase64, mimeType) => {
+    const updated = await apiRequest<BackendUser>('/auth/me/photos', {
+      method: 'POST',
+      body: { imageBase64, mimeType },
+    });
+    set({ currentUser: mapUserFromBackend(updated) });
+  },
+
+  removeGalleryPhoto: async (photoUrl) => {
+    const updated = await apiRequest<BackendUser>('/auth/me/photos', {
+      method: 'DELETE',
+      body: { photoUrl },
     });
     set({ currentUser: mapUserFromBackend(updated) });
   },

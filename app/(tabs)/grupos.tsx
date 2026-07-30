@@ -69,6 +69,7 @@ export default function GruposScreen() {
           <FeaturedGroupBanner
             group={featuredGroup}
             isMember={isMember(featuredGroup)}
+            onPress={() => router.push(`/group/${featuredGroup.id}`)}
             onToggleMembership={() => toggleMembership(featuredGroup.id, isMember(featuredGroup))}
           />
         )}
@@ -90,6 +91,7 @@ export default function GruposScreen() {
             key={group.id}
             group={group}
             isMember={isMember(group)}
+            onPress={() => router.push(`/group/${group.id}`)}
             onToggleMembership={() => toggleMembership(group.id, isMember(group))}
           />
         ))}

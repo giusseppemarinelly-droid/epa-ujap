@@ -104,7 +104,9 @@ const ALLOWED_IMAGE_MIME_TYPES: Record<string, string> = {
   'image/webp': 'webp',
 };
 
-export async function uploadProfilePhoto(userId: string, imageBase64: string, mimeType: string) {
+const MAX_GALLERY_PHOTOS = 6;
+
+async function uploadImageToStorage(userId: string, imageBase64: string, mimeType: string): Promise<string> {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new HttpError(500, 'La subida de fotos no está configurada en el servidor');
   }
@@ -114,7 +116,7 @@ export async function uploadProfilePhoto(userId: string, imageBase64: string, mi
     throw new HttpError(400, 'Formato de imagen no soportado');
   }
 
-  const path = `${userId}-${Date.now()}.${extension}`;
+  const path = `${userId}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}.${extension}`;
   const buffer = Buffer.from(imageBase64, 'base64');
 
   const uploadResponse = await fetch(`${env.SUPABASE_URL}/storage/v1/object/avatars/${path}`, {
@@ -133,11 +135,54 @@ export async function uploadProfilePhoto(userId: string, imageBase64: string, mi
     throw new HttpError(502, `No se pudo subir la imagen: ${errorText}`);
   }
 
-  const photoUrl = `${env.SUPABASE_URL}/storage/v1/object/public/avatars/${path}`;
+  return `${env.SUPABASE_URL}/storage/v1/object/public/avatars/${path}`;
+}
+
+export async function uploadProfilePhoto(userId: string, imageBase64: string, mimeType: string) {
+  const photoUrl = await uploadImageToStorage(userId, imageBase64, mimeType);
 
   return prisma.user.update({
     where: { id: userId },
     data: { photoUrl },
+    include: { interests: { include: { interest: true } } },
+  });
+}
+
+// Galería de fotos que se muestra en el carrusel de la tarjeta de Descubrir
+// (independiente del avatar único que se ve en encabezados y chats).
+export async function addGalleryPhoto(userId: string, imageBase64: string, mimeType: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new HttpError(404, 'Usuario no encontrado');
+  }
+  if (user.photos.length >= MAX_GALLERY_PHOTOS) {
+    throw new HttpError(400, `Puedes subir un máximo de ${MAX_GALLERY_PHOTOS} fotos`);
+  }
+
+  const url = await uploadImageToStorage(userId, imageBase64, mimeType);
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      photos: [...user.photos, url],
+      photoUrl: user.photoUrl ?? url,
+    },
+    include: { interests: { include: { interest: true } } },
+  });
+}
+
+export async function removeGalleryPhoto(userId: string, photoUrl: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new HttpError(404, 'Usuario no encontrado');
+  }
+
+  const photos = user.photos.filter((url) => url !== photoUrl);
+  const photoUrlUpdate = user.photoUrl === photoUrl ? (photos[0] ?? null) : user.photoUrl;
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: { photos, photoUrl: photoUrlUpdate },
     include: { interests: { include: { interest: true } } },
   });
 }

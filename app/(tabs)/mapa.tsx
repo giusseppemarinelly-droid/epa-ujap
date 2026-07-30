@@ -9,7 +9,7 @@ import { MapCanvas } from '@/src/components/mapa/MapCanvas';
 import { PlanDetailCard } from '@/src/components/mapa/PlanDetailCard';
 import { Avatar } from '@/src/components/ui';
 import { useAuthStore, usePlansStore } from '@/src/store';
-import { colors, epaGradient, radii } from '@/src/theme/tokens';
+import { colors, elevation, epaGradient, radii } from '@/src/theme/tokens';
 
 export default function MapaScreen() {
   const router = useRouter();
@@ -28,8 +28,11 @@ export default function MapaScreen() {
     <View className="flex-1 bg-surface">
       <MapCanvas plans={plans} selectedPlanId={selectedPlanId} onSelectPlan={setSelectedPlanId} />
 
-      <SafeAreaView edges={['top']} className="absolute top-0 left-0 right-0">
-        <View className="flex-row items-center px-margin-mobile py-3">
+      <SafeAreaView edges={['top']} className="absolute top-0 left-0 right-0 px-margin-mobile pt-2">
+        <View
+          className="flex-row items-center bg-surface-container-lowest rounded-full px-3 py-2"
+          style={elevation.card}
+        >
           <Avatar uri={currentUser?.photoUrl} size={36} />
           <Text
             className="text-on-surface ml-2 flex-1"
@@ -38,7 +41,7 @@ export default function MapaScreen() {
             Epa
           </Text>
           <Pressable
-            className="bg-surface-container-lowest items-center justify-center rounded-full"
+            className="bg-surface-container items-center justify-center rounded-full"
             style={{ width: 40, height: 40 }}
             onPress={() => Alert.alert('Epas nuevos', 'No tienes epas nuevos por ahora.')}
           >

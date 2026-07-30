@@ -16,45 +16,48 @@ const CATEGORY_ICON: Record<GroupCategory, keyof typeof MaterialIcons.glyphMap> 
 type GroupCardProps = {
   group: Group;
   isMember: boolean;
+  onPress: () => void;
   onToggleMembership: () => void;
 };
 
-export function GroupCard({ group, isMember, onToggleMembership }: GroupCardProps) {
+export function GroupCard({ group, isMember, onPress, onToggleMembership }: GroupCardProps) {
   return (
-    <Card className="flex-row items-center mb-3">
-      {group.imageUrl ? (
-        <Image source={{ uri: group.imageUrl }} style={{ width: 48, height: 48, borderRadius: 16 }} />
-      ) : (
-        <View
-          className="items-center justify-center rounded-md bg-secondary-container"
-          style={{ width: 48, height: 48 }}
-        >
-          <MaterialIcons
-            name={CATEGORY_ICON[group.category]}
-            size={22}
-            color={colors['on-secondary-container']}
-          />
+    <Pressable onPress={onPress}>
+      <Card className="flex-row items-center mb-3">
+        {group.imageUrl ? (
+          <Image source={{ uri: group.imageUrl }} style={{ width: 48, height: 48, borderRadius: 16 }} />
+        ) : (
+          <View
+            className="items-center justify-center rounded-md bg-secondary-container"
+            style={{ width: 48, height: 48 }}
+          >
+            <MaterialIcons
+              name={CATEGORY_ICON[group.category]}
+              size={22}
+              color={colors['on-secondary-container']}
+            />
+          </View>
+        )}
+        <View className="flex-1 ml-3">
+          <Text className="text-on-surface" style={{ fontFamily: 'Inter_700Bold', fontSize: 15 }}>
+            {group.name}
+          </Text>
+          <Text className="text-on-surface-variant mt-1" style={{ fontSize: 12 }}>
+            {group.category} · {group.memberIds.length} miembros
+          </Text>
         </View>
-      )}
-      <View className="flex-1 ml-3">
-        <Text className="text-on-surface" style={{ fontFamily: 'Inter_700Bold', fontSize: 15 }}>
-          {group.name}
-        </Text>
-        <Text className="text-on-surface-variant mt-1" style={{ fontSize: 12 }}>
-          {group.category} · {group.memberIds.length} miembros
-        </Text>
-      </View>
-      <Pressable
-        onPress={onToggleMembership}
-        className={`rounded-full px-4 py-2 ${isMember ? 'bg-surface-container' : 'bg-primary'}`}
-      >
-        <Text
-          className={isMember ? 'text-on-surface-variant' : 'text-on-primary'}
-          style={{ fontFamily: 'Inter_700Bold', fontSize: 12 }}
+        <Pressable
+          onPress={onToggleMembership}
+          className={`rounded-full px-4 py-2 ${isMember ? 'bg-surface-container' : 'bg-primary'}`}
         >
-          {isMember ? 'Dentro' : 'Me apunto'}
-        </Text>
-      </Pressable>
-    </Card>
+          <Text
+            className={isMember ? 'text-on-surface-variant' : 'text-on-primary'}
+            style={{ fontFamily: 'Inter_700Bold', fontSize: 12 }}
+          >
+            {isMember ? 'Dentro' : 'Me apunto'}
+          </Text>
+        </Pressable>
+      </Card>
+    </Pressable>
   );
 }
