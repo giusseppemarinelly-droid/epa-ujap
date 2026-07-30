@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Avatar, Badge, Button, Card, Chip } from '@/src/components/ui';
 import { useAuthStore, useGroupsStore } from '@/src/store';
@@ -13,12 +14,45 @@ export default function PerfilScreen() {
   const currentUser = useAuthStore((state) => state.currentUser);
   const allInterests = useAuthStore((state) => state.interests);
   const logout = useAuthStore((state) => state.logout);
+  const uploadPhoto = useAuthStore((state) => state.uploadPhoto);
   const groups = useGroupsStore((state) => state.groups);
   const fetchGroups = useGroupsStore((state) => state.fetchGroups);
+
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
+
+  async function handleChangePhoto() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permiso necesario', 'Epa necesita acceso a tus fotos para cambiar tu foto de perfil.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets[0]?.base64) return;
+
+    const asset = result.assets[0];
+    const mimeType = asset.mimeType ?? 'image/jpeg';
+
+    setUploadingPhoto(true);
+    try {
+      await uploadPhoto(asset.base64!, mimeType);
+    } catch (err) {
+      Alert.alert('No se pudo subir la foto', err instanceof Error ? err.message : undefined);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   if (!currentUser) {
     return null;
@@ -45,9 +79,21 @@ export default function PerfilScreen() {
         </View>
 
         <View className="items-center" style={{ marginTop: -48 }}>
-          <View className="rounded-full" style={{ borderWidth: 4, borderColor: colors.surface }}>
-            <Avatar uri={currentUser.photoUrl} size={96} />
-          </View>
+          <Pressable onPress={handleChangePhoto} disabled={uploadingPhoto}>
+            <View className="rounded-full" style={{ borderWidth: 4, borderColor: colors.surface }}>
+              <Avatar uri={currentUser.photoUrl} size={96} />
+            </View>
+            <View
+              className="absolute bottom-0 right-0 items-center justify-center rounded-full bg-primary"
+              style={{ width: 32, height: 32, borderWidth: 2, borderColor: colors.surface }}
+            >
+              {uploadingPhoto ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <MaterialIcons name="photo-camera" size={16} color="#FFFFFF" />
+              )}
+            </View>
+          </Pressable>
           <Text className="text-on-surface mt-3" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 22 }}>
             {currentUser.name}
           </Text>

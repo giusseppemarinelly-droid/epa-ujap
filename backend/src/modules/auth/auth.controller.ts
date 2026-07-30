@@ -73,3 +73,14 @@ export async function updateProfileHandler(req: Request, res: Response) {
   const user = await authService.updateProfile(req.userId!, data);
   res.json(sanitizeUser(user));
 }
+
+const uploadPhotoSchema = z.object({
+  imageBase64: z.string().min(1),
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
+});
+
+export async function uploadPhotoHandler(req: Request, res: Response) {
+  const { imageBase64, mimeType } = uploadPhotoSchema.parse(req.body);
+  const user = await authService.uploadProfilePhoto(req.userId!, imageBase64, mimeType);
+  res.json(sanitizeUser(user));
+}

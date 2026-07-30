@@ -98,6 +98,50 @@ export async function updateProfile(userId: string, data: ProfileUpdateInput) {
   return user;
 }
 
+const ALLOWED_IMAGE_MIME_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+export async function uploadProfilePhoto(userId: string, imageBase64: string, mimeType: string) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new HttpError(500, 'La subida de fotos no está configurada en el servidor');
+  }
+
+  const extension = ALLOWED_IMAGE_MIME_TYPES[mimeType];
+  if (!extension) {
+    throw new HttpError(400, 'Formato de imagen no soportado');
+  }
+
+  const path = `${userId}-${Date.now()}.${extension}`;
+  const buffer = Buffer.from(imageBase64, 'base64');
+
+  const uploadResponse = await fetch(`${env.SUPABASE_URL}/storage/v1/object/avatars/${path}`, {
+    method: 'POST',
+    headers: {
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': mimeType,
+      'x-upsert': 'true',
+    },
+    body: buffer,
+  });
+
+  if (!uploadResponse.ok) {
+    const errorText = await uploadResponse.text();
+    throw new HttpError(502, `No se pudo subir la imagen: ${errorText}`);
+  }
+
+  const photoUrl = `${env.SUPABASE_URL}/storage/v1/object/public/avatars/${path}`;
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: { photoUrl },
+    include: { interests: { include: { interest: true } } },
+  });
+}
+
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },

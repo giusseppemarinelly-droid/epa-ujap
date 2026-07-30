@@ -17,7 +17,8 @@ const app = express();
 const publicWebDir = path.join(__dirname, '..', 'public-web');
 
 app.use(cors());
-app.use(express.json());
+// Límite alto porque las fotos de perfil viajan como base64 en el body.
+app.use(express.json({ limit: '10mb' }));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 

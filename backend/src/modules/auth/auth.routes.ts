@@ -7,6 +7,7 @@ import {
   meHandler,
   signupHandler,
   updateProfileHandler,
+  uploadPhotoHandler,
   verifyHandler,
 } from './auth.controller';
 
@@ -17,3 +18,4 @@ authRouter.post('/verify', asyncHandler(verifyHandler));
 authRouter.post('/login', asyncHandler(loginHandler));
 authRouter.get('/me', requireAuth, asyncHandler(meHandler));
 authRouter.patch('/me', requireAuth, asyncHandler(updateProfileHandler));
+authRouter.post('/me/photo', requireAuth, asyncHandler(uploadPhotoHandler));

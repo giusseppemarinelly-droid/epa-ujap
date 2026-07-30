@@ -29,7 +29,13 @@
       "expo-router",
       "expo-splash-screen",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Epa necesita acceso a tus fotos para que puedas cambiar tu foto de perfil."
+        }
+      ]
     ]
   }
 }

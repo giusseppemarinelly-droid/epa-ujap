@@ -50,6 +50,7 @@ type AuthState = {
     interestIds?: string[];
     lookingFor?: LookingFor[];
   }) => Promise<void>;
+  uploadPhoto: (imageBase64: string, mimeType: string) => Promise<void>;
 };
 
 const emptyDraft: OnboardingDraft = {
@@ -194,6 +195,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         faculty: data.faculty ? facultyToBackend[data.faculty] : undefined,
         lookingFor: data.lookingFor?.map((value) => lookingForToBackend[value]),
       },
+    });
+    set({ currentUser: mapUserFromBackend(updated) });
+  },
+
+  uploadPhoto: async (imageBase64, mimeType) => {
+    const updated = await apiRequest<BackendUser>('/auth/me/photo', {
+      method: 'POST',
+      body: { imageBase64, mimeType },
     });
     set({ currentUser: mapUserFromBackend(updated) });
   },
