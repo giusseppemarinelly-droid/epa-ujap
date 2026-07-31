@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ConversationRow } from '@/src/components/mensajes/ConversationRow';
-import { useAuthStore, useConversationsStore } from '@/src/store';
+import { useAuthStore, useConnectionsStore, useConversationsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 type Tab = 'individual' | 'grupal';
@@ -20,6 +20,8 @@ export default function MensajesScreen() {
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
   const conversations = useConversationsStore((state) => state.conversations);
   const fetchConversations = useConversationsStore((state) => state.fetchConversations);
+  const incomingCount = useConnectionsStore((state) => state.incoming.length);
+  const fetchConnections = useConnectionsStore((state) => state.fetchAll);
 
   const [tab, setTab] = useState<Tab>('individual');
   const [query, setQuery] = useState('');
@@ -27,6 +29,10 @@ export default function MensajesScreen() {
   useEffect(() => {
     if (currentUserId) fetchConversations(currentUserId);
   }, [currentUserId, fetchConversations]);
+
+  useEffect(() => {
+    fetchConnections();
+  }, [fetchConnections]);
 
   const filtered = useMemo(() => {
     const byTab = conversations.filter((conversation) =>
@@ -42,6 +48,21 @@ export default function MensajesScreen() {
         <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}>
           Epa
         </Text>
+        <Pressable
+          className="items-center justify-center rounded-full mr-2"
+          style={{ width: 40, height: 40, backgroundColor: colors['surface-container'] }}
+          onPress={() => router.push('/connections')}
+        >
+          <MaterialIcons name="waving-hand" size={18} color={colors['on-surface']} />
+          {incomingCount > 0 && (
+            <View
+              className="absolute rounded-full items-center justify-center"
+              style={{ top: -2, right: -2, minWidth: 16, height: 16, backgroundColor: colors.primary, paddingHorizontal: 3 }}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 10, fontFamily: 'Inter_700Bold' }}>{incomingCount}</Text>
+            </View>
+          )}
+        </Pressable>
         <Pressable
           className="items-center justify-center rounded-full"
           style={{ width: 40, height: 40, backgroundColor: colors['ujap-navy'] }}

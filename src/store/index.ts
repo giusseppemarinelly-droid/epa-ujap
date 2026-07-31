@@ -4,3 +4,4 @@ export { useGroupsStore } from './useGroupsStore';
 export { useDiscoverStore } from './useDiscoverStore';
 export { useConversationsStore } from './useConversationsStore';
 export { useLocationPickerStore } from './useLocationPickerStore';
+export { useConnectionsStore, type IncomingRequest, type SentRequest } from './useConnectionsStore';
