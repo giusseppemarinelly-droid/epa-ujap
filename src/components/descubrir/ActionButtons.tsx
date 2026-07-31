@@ -37,25 +37,17 @@ type ActionButtonsProps = {
 // mantener el tono de comunidad universitaria y no el de una app de citas.
 export function ActionButtons({ userId, canUndo }: ActionButtonsProps) {
   const descartar = useDiscoverStore((state) => state.descartar);
-  const destacar = useDiscoverStore((state) => state.destacar);
   const conectar = useDiscoverStore((state) => state.conectar);
   const deshacer = useDiscoverStore((state) => state.deshacer);
 
   return (
-    <View className="flex-row items-center justify-center gap-4">
+    <View className="flex-row items-center justify-center gap-6">
       <CircleButton
         icon="close"
         size={52}
         backgroundColor="#FFFFFF"
         iconColor={colors['on-surface']}
         onPress={() => descartar(userId)}
-      />
-      <CircleButton
-        icon="star"
-        size={44}
-        backgroundColor={colors['ujap-navy']}
-        iconColor={colors['ujap-gold']}
-        onPress={() => destacar(userId)}
       />
       <Pressable onPress={() => conectar(userId)}>
         <LinearGradient

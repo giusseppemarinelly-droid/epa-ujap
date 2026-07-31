@@ -1,10 +1,12 @@
+import { Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { create } from 'zustand';
 
 import { apiRequest } from '@/src/lib/api';
 import { mapUserFromBackend, type BackendUser } from '@/src/lib/enumMappers';
 import type { User } from '@/src/types';
 
-type DiscoverAction = 'descartado' | 'destacado' | 'conectado';
+type DiscoverAction = 'descartado' | 'conectado';
 
 type DiscoverState = {
   usersById: Record<string, User>;
@@ -13,7 +15,6 @@ type DiscoverState = {
   history: { userId: string; action: DiscoverAction }[];
   fetchCandidates: () => Promise<void>;
   descartar: (userId: string) => void;
-  destacar: (userId: string) => void;
   conectar: (userId: string) => void;
   deshacer: () => void;
 };
@@ -48,10 +49,14 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
   },
 
   descartar: (userId) => set(removeFromQueue('descartado')(userId)),
-  destacar: (userId) => set(removeFromQueue('destacado')(userId)),
 
   conectar: (userId) => {
     set(removeFromQueue('conectado')(userId));
+    // Pequeño golpe táctil al mandar la solicitud, tanto por botón como por
+    // swipe, para que la acción se sienta más viva en el teléfono.
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
     apiRequest('/connections', { method: 'POST', body: { receiverId: userId } }).catch(() => {
       // El usuario ya salió de la pila localmente; si falla el request no
       // hay una acción visible que revertir.
