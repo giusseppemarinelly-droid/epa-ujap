@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -69,8 +69,12 @@ export default function DescubrirScreen() {
 
       <View className="flex-1 px-margin-mobile pb-4">
         {currentCandidate ? (
-          <>
-            <View style={{ flex: 1 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
+            {/* Relación de aspecto fija (no flex compartido con el panel de
+                abajo) para que la foto siempre se vea completa, tipo tarjeta
+                de Tinder, en vez de recortarse para dejarle espacio a lo
+                demás. */}
+            <View style={{ aspectRatio: 0.72, width: '100%' }}>
               <SwipeableCard
                 key={currentCandidate.id}
                 onSwipeLeft={() => descartar(currentCandidate.id)}
@@ -80,7 +84,7 @@ export default function DescubrirScreen() {
               </SwipeableCard>
             </View>
             {currentUser && <DiscoverInfoPanel candidate={currentCandidate} currentUser={currentUser} />}
-          </>
+          </ScrollView>
         ) : (
           <View className="flex-1 items-center justify-center">
             <EmptyState
