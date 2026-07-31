@@ -69,6 +69,13 @@ const light = {
   'category-creatividad-fg': '#B4570A',
   'category-arte-bg': '#FFD9EC',
   'category-arte-fg': '#B0286B',
+
+  // El degradado insignia de los CTAs se mantiene igual de vivo en los dos
+  // temas a propósito: es una superficie de marca, no un tono M3 que deba
+  // aclararse en oscuro, y el texto blanco de encima solo se ve bien si el
+  // fondo se queda saturado.
+  'brand-gradient-start': '#FF6F61',
+  'brand-gradient-end': '#6B5B95',
 };
 
 const dark = {
@@ -128,6 +135,9 @@ const dark = {
   'category-creatividad-fg': '#FFC79A',
   'category-arte-bg': '#4A1F35',
   'category-arte-fg': '#FFB0DB',
+
+  'brand-gradient-start': '#FF6F61',
+  'brand-gradient-end': '#6B5B95',
 };
 
 const colors = { ...light };

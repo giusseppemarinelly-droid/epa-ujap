@@ -18,21 +18,19 @@ function ThemeToggle() {
     <Pressable
       onPress={() => setThemePreference(isDark ? 'light' : 'dark')}
       className="flex-row bg-surface-container rounded-full p-1 self-start"
-      style={{ width: 104 }}
+      style={{ width: 72 }}
     >
       <View
-        className="flex-1 items-center justify-center rounded-full flex-row"
-        style={{ height: 36, backgroundColor: !isDark ? colors.primary : 'transparent', gap: 4 }}
+        className="flex-1 items-center justify-center rounded-full"
+        style={{ height: 36, backgroundColor: !isDark ? colors.primary : 'transparent' }}
       >
-        <MaterialIcons name="light-mode" size={15} color={!isDark ? '#FFFFFF' : colors['on-surface-variant']} />
-        {!isDark && <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 12 }}>Claro</Text>}
+        <MaterialIcons name="light-mode" size={16} color={!isDark ? '#FFFFFF' : colors['on-surface-variant']} />
       </View>
       <View
-        className="flex-1 items-center justify-center rounded-full flex-row"
-        style={{ height: 36, backgroundColor: isDark ? colors.primary : 'transparent', gap: 4 }}
+        className="flex-1 items-center justify-center rounded-full"
+        style={{ height: 36, backgroundColor: isDark ? colors.primary : 'transparent' }}
       >
-        <MaterialIcons name="dark-mode" size={15} color={isDark ? '#FFFFFF' : colors['on-surface-variant']} />
-        {isDark && <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 12 }}>Oscuro</Text>}
+        <MaterialIcons name="dark-mode" size={16} color={isDark ? '#FFFFFF' : colors['on-surface-variant']} />
       </View>
     </Pressable>
   );

@@ -10,7 +10,7 @@ export { colors };
 // en cada uso, después de que el remount por cambio de tema ya aplicó la
 // paleta correspondiente.
 export function getEpaGradient() {
-  return [colors.primary, colors.secondary] as const;
+  return [colors['brand-gradient-start'], colors['brand-gradient-end']] as const;
 }
 
 export const typography = {

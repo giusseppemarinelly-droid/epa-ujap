@@ -28,8 +28,12 @@ export function Button({
     <ActivityIndicator color={variant === 'ghost' ? '#FF6F61' : '#FFFFFF'} />
   ) : (
     <Text
-      className={variant === 'ghost' ? 'text-primary' : 'text-on-primary'}
-      style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}
+      className={variant === 'ghost' ? 'text-primary' : undefined}
+      style={{
+        fontFamily: 'Inter_700Bold',
+        fontSize: 16,
+        color: variant === 'ghost' ? undefined : '#FFFFFF',
+      }}
     >
       {label}
     </Text>
