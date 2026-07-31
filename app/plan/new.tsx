@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button, Chip, Input } from '@/src/components/ui';
-import { usePlansStore } from '@/src/store';
+import { usePlansStore, useLocationPickerStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { PlanCategory } from '@/src/types';
 
@@ -18,8 +18,6 @@ const categories: { value: PlanCategory; label: string }[] = [
 ];
 
 const capacityOptions = [4, 6, 8, 10, 15, 20];
-
-const UJAP_CENTER = { lat: 10.2167, lng: -68.0092 };
 
 function nextAt(hour: number, addDays = 0) {
   const date = new Date();
@@ -47,29 +45,44 @@ const timePresets = [
 export default function NewPlanScreen() {
   const router = useRouter();
   const createPlan = usePlansStore((state) => state.createPlan);
+  const pendingLocation = useLocationPickerStore((state) => state.pending);
+  const clearPendingLocation = useLocationPickerStore((state) => state.clearPending);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<PlanCategory>('estudio');
-  const [address, setAddress] = useState('');
+  const [location, setLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
   const [capacity, setCapacity] = useState(8);
   const [dateTime, setDateTime] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const isValid = title.trim().length > 2 && address.trim().length > 0 && !!dateTime;
+  useEffect(() => {
+    if (pendingLocation) {
+      setLocation(pendingLocation);
+      clearPendingLocation();
+    }
+  }, [pendingLocation, clearPendingLocation]);
+
+  const isValid = title.trim().length > 2 && !!location && !!dateTime;
+
+  function openLocationPicker() {
+    router.push({
+      pathname: '/plan/location',
+      params: location ? { lat: String(location.lat), lng: String(location.lng) } : {},
+    });
+  }
 
   async function handleSubmit() {
-    if (!isValid || !dateTime || submitting) return;
+    if (!isValid || !location || !dateTime || submitting) return;
     setSubmitting(true);
     try {
-      const jitter = () => (Math.random() - 0.5) * 0.004;
       await createPlan({
         title: title.trim(),
         description: description.trim() || 'Sin descripción adicional.',
         category,
-        latitude: UJAP_CENTER.lat + jitter(),
-        longitude: UJAP_CENTER.lng + jitter(),
-        address: address.trim(),
+        latitude: location.lat,
+        longitude: location.lng,
+        address: location.address,
         dateTime: dateTime.toISOString(),
         capacity,
       });
@@ -112,12 +125,27 @@ export default function NewPlanScreen() {
           ))}
         </View>
 
-        <Input
-          label="Lugar"
-          placeholder="Biblioteca, cafetería, cancha..."
-          value={address}
-          onChangeText={setAddress}
-        />
+        <Text
+          className="text-on-surface-variant mb-2"
+          style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}
+        >
+          LUGAR
+        </Text>
+        <Pressable
+          onPress={openLocationPicker}
+          className="flex-row items-center bg-surface-container-lowest rounded-md px-4 py-3 mb-4"
+          style={{ borderWidth: 1, borderColor: colors['surface-container'], minHeight: 52 }}
+        >
+          <MaterialIcons name="location-on" size={20} color={colors.primary} />
+          <Text
+            className={location ? 'text-on-surface' : 'text-on-surface-variant'}
+            style={{ fontFamily: 'Inter_400Regular', fontSize: 14, marginLeft: 8, flex: 1 }}
+            numberOfLines={1}
+          >
+            {location ? location.address : 'Elegir en el mapa'}
+          </Text>
+          <MaterialIcons name="chevron-right" size={20} color={colors['on-surface-variant']} />
+        </Pressable>
 
         <Text
           className="text-on-surface-variant mb-2"
