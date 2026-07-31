@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ActionButtons } from '@/src/components/descubrir/ActionButtons';
 import { DiscoverCard } from '@/src/components/descubrir/DiscoverCard';
-import { DiscoverInfoPanel } from '@/src/components/descubrir/DiscoverInfoPanel';
 import { FiltersSheet, type DiscoverFilters } from '@/src/components/descubrir/FiltersSheet';
 import { SwipeableCard } from '@/src/components/descubrir/SwipeableCard';
 import { Avatar, EmptyState } from '@/src/components/ui';
@@ -67,24 +66,15 @@ export default function DescubrirScreen() {
         </Pressable>
       </View>
 
-      <View className="flex-1 px-margin-mobile pb-4">
-        {currentCandidate ? (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-            {/* Relación de aspecto fija (no flex compartido con el panel de
-                abajo) para que la foto siempre se vea completa, tipo tarjeta
-                de Tinder, en vez de recortarse para dejarle espacio a lo
-                demás. */}
-            <View style={{ aspectRatio: 0.72, width: '100%' }}>
-              <SwipeableCard
-                key={currentCandidate.id}
-                onSwipeLeft={() => descartar(currentCandidate.id)}
-                onSwipeRight={() => conectar(currentCandidate.id)}
-              >
-                <DiscoverCard user={currentCandidate} />
-              </SwipeableCard>
-            </View>
-            {currentUser && <DiscoverInfoPanel candidate={currentCandidate} currentUser={currentUser} />}
-          </ScrollView>
+      <View className="flex-1 px-margin-mobile pb-3">
+        {currentCandidate && currentUser ? (
+          <SwipeableCard
+            key={currentCandidate.id}
+            onSwipeLeft={() => descartar(currentCandidate.id)}
+            onSwipeRight={() => conectar(currentCandidate.id)}
+          >
+            <DiscoverCard user={currentCandidate} currentUser={currentUser} />
+          </SwipeableCard>
         ) : (
           <View className="flex-1 items-center justify-center">
             <EmptyState
@@ -96,7 +86,7 @@ export default function DescubrirScreen() {
         )}
       </View>
 
-      <View className="pb-28">
+      <View className="pb-20">
         {currentCandidate && <ActionButtons userId={currentCandidate.id} canUndo={history.length > 0} />}
       </View>
 

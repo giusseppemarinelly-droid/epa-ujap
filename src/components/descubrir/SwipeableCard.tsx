@@ -26,10 +26,6 @@ export function SwipeableCard({ children, onSwipeLeft, onSwipeRight }: Swipeable
   const translateY = useSharedValue(0);
 
   const gesture = Gesture.Pan()
-    // Solo se activa con arrastres predominantemente horizontales; los
-    // verticales se dejan pasar al ScrollView que envuelve la tarjeta.
-    .activeOffsetX([-10, 10])
-    .failOffsetY([-15, 15])
     .onUpdate((event) => {
       translateX.value = event.translationX;
       translateY.value = event.translationY * 0.15;
