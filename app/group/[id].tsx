@@ -9,7 +9,7 @@ import { Avatar, Badge, Button, Card } from '@/src/components/ui';
 import { apiRequest } from '@/src/lib/api';
 import { mapGroupFromBackend, type BackendGroup } from '@/src/lib/enumMappers';
 import { useAuthStore, useGroupsStore } from '@/src/store';
-import { colors, epaGradient, radii } from '@/src/theme/tokens';
+import { colors, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { Group, GroupCategory } from '@/src/types';
 
 const CATEGORY_ICON: Record<GroupCategory, keyof typeof MaterialIcons.glyphMap> = {
@@ -81,7 +81,7 @@ export default function GroupDetailScreen() {
           {group.imageUrl ? (
             <Image source={{ uri: group.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           ) : (
-            <LinearGradient colors={epaGradient} style={{ width: '100%', height: '100%' }}>
+            <LinearGradient colors={getEpaGradient()} style={{ width: '100%', height: '100%' }}>
               <View className="flex-1 items-center justify-center">
                 <MaterialIcons name={CATEGORY_ICON[group.category]} size={56} color="#FFFFFF" />
               </View>

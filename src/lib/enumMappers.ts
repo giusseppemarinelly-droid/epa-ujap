@@ -84,6 +84,7 @@ export type BackendUser = {
   isOrganizer: boolean;
   lookingFor: string[];
   online: boolean;
+  mutualConnections?: { id: string; name: string; photoUrl: string | null }[];
   interests?: { interest: { id: string; label: string } }[];
   stats?: { plansCreated: number; attendances: number };
 };
@@ -105,6 +106,12 @@ export function mapUserFromBackend(raw: BackendUser): User {
     interestIds: raw.interests?.map((entry) => entry.interest.id) ?? [],
     lookingFor: raw.lookingFor.map((value) => lookingForFromBackend[value]).filter(Boolean),
     online: raw.online,
+    mutualConnections: (raw.mutualConnections ?? []).map((m) => ({
+      id: m.id,
+      name: m.name,
+      photoUrl: m.photoUrl ?? undefined,
+      online: false,
+    })),
     stats: raw.stats ?? { plansCreated: 0, attendances: 0 },
   };
 }

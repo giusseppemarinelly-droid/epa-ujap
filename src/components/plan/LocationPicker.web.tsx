@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { Map as LeafletMap } from 'leaflet';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { useThemeStore } from '@/src/store';
 import { colors, elevation } from '@/src/theme/tokens';
 
 type LocationPickerProps = {
@@ -37,6 +38,7 @@ function FlyToHandler({ flyTo }: { flyTo: { lat: number; lng: number } | null })
 // centro, el mapa se mueve debajo con Leaflet en vez de react-native-maps.
 export function LocationPicker({ initialLat, initialLng, flyTo, onRegionChange }: LocationPickerProps) {
   const mapRef = useRef<LeafletMap | null>(null);
+  const isDark = useThemeStore((state) => state.resolvedScheme === 'dark');
 
   return (
     <View style={{ flex: 1 }}>
@@ -50,7 +52,8 @@ export function LocationPicker({ initialLat, initialLng, flyTo, onRegionChange }
         ref={mapRef}
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          key={isDark ? 'dark' : 'light'}
+          url={`https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
           attribution="&copy; OpenStreetMap, &copy; CARTO"
           subdomains="abcd"
           maxZoom={19}

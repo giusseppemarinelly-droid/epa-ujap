@@ -2,7 +2,7 @@ import { Image, Pressable, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Card } from '@/src/components/ui';
-import { categoryAccents } from '@/src/theme/tokens';
+import { getCategoryAccents } from '@/src/theme/tokens';
 import type { Group, GroupCategory } from '@/src/types';
 
 const CATEGORY_ICON: Record<GroupCategory, keyof typeof MaterialIcons.glyphMap> = {
@@ -21,7 +21,7 @@ type GroupCardProps = {
 };
 
 export function GroupCard({ group, isMember, onPress, onToggleMembership }: GroupCardProps) {
-  const accent = categoryAccents[group.category];
+  const accent = getCategoryAccents()[group.category];
 
   return (
     <Pressable onPress={onPress}>

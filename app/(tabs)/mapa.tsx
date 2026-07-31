@@ -9,7 +9,7 @@ import { MapCanvas } from '@/src/components/mapa/MapCanvas';
 import { PlanDetailCard } from '@/src/components/mapa/PlanDetailCard';
 import { Avatar } from '@/src/components/ui';
 import { useAuthStore, usePlansStore } from '@/src/store';
-import { colors, elevation, epaGradient, radii } from '@/src/theme/tokens';
+import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 
 export default function MapaScreen() {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function MapaScreen() {
       {!selectedPlan && (
         <Pressable className="absolute right-5 bottom-28" onPress={() => router.push('/plan/new')}>
           <LinearGradient
-            colors={epaGradient}
+            colors={getEpaGradient()}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{

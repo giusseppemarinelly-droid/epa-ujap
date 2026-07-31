@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { epaGradient, radii } from '@/src/theme/tokens';
+import { getEpaGradient, radii } from '@/src/theme/tokens';
 
 type ButtonVariant = 'primary' | 'ghost';
 
@@ -56,7 +56,7 @@ export function Button({
       style={({ pressed }) => pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 }}
     >
       <LinearGradient
-        colors={epaGradient}
+        colors={getEpaGradient()}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{

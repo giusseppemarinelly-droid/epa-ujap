@@ -25,3 +25,20 @@ export async function clearToken(): Promise<void> {
   }
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
+
+// Genérico para preferencias no sensibles (ej. tema claro/oscuro) — mismo
+// patrón multiplataforma que el token, sin necesidad de otra dependencia.
+export async function getPreference(key: string): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+  }
+  return SecureStore.getItemAsync(key);
+}
+
+export async function setPreference(key: string, value: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    window.localStorage.setItem(key, value);
+    return;
+  }
+  await SecureStore.setItemAsync(key, value);
+}

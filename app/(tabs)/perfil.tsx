@@ -6,8 +6,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Avatar, Badge, Button, Card, Chip } from '@/src/components/ui';
-import { useAuthStore, useGroupsStore } from '@/src/store';
+import { useAuthStore, useGroupsStore, useThemeStore, type ThemePreference } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
+
+const themeOptions: { value: ThemePreference; label: string }[] = [
+  { value: 'light', label: 'Claro' },
+  { value: 'dark', label: 'Oscuro' },
+  { value: 'system', label: 'Sistema' },
+];
 
 export default function PerfilScreen() {
   const router = useRouter();
@@ -17,6 +23,8 @@ export default function PerfilScreen() {
   const uploadPhoto = useAuthStore((state) => state.uploadPhoto);
   const groups = useGroupsStore((state) => state.groups);
   const fetchGroups = useGroupsStore((state) => state.fetchGroups);
+  const themePreference = useThemeStore((state) => state.preference);
+  const setThemePreference = useThemeStore((state) => state.setThemePreference);
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
@@ -182,6 +190,22 @@ export default function PerfilScreen() {
               </Card>
             ))
           )}
+        </View>
+
+        <View className="px-margin-mobile mt-6">
+          <Text className="text-on-surface mb-3" style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}>
+            Apariencia
+          </Text>
+          <View className="flex-row gap-2">
+            {themeOptions.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={themePreference === option.value}
+                onPress={() => setThemePreference(option.value)}
+              />
+            ))}
+          </View>
         </View>
 
         <View className="px-margin-mobile mt-4 gap-3">

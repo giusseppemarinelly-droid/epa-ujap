@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { ActionButtons } from '@/src/components/descubrir/ActionButtons';
 import { DiscoverCard } from '@/src/components/descubrir/DiscoverCard';
+import { DiscoverInfoPanel } from '@/src/components/descubrir/DiscoverInfoPanel';
 import { FiltersSheet, type DiscoverFilters } from '@/src/components/descubrir/FiltersSheet';
 import { SwipeableCard } from '@/src/components/descubrir/SwipeableCard';
 import { Avatar, EmptyState } from '@/src/components/ui';
@@ -68,13 +69,18 @@ export default function DescubrirScreen() {
 
       <View className="flex-1 px-margin-mobile pb-4">
         {currentCandidate ? (
-          <SwipeableCard
-            key={currentCandidate.id}
-            onSwipeLeft={() => descartar(currentCandidate.id)}
-            onSwipeRight={() => conectar(currentCandidate.id)}
-          >
-            <DiscoverCard user={currentCandidate} />
-          </SwipeableCard>
+          <>
+            <View style={{ flex: 1 }}>
+              <SwipeableCard
+                key={currentCandidate.id}
+                onSwipeLeft={() => descartar(currentCandidate.id)}
+                onSwipeRight={() => conectar(currentCandidate.id)}
+              >
+                <DiscoverCard user={currentCandidate} />
+              </SwipeableCard>
+            </View>
+            {currentUser && <DiscoverInfoPanel candidate={currentCandidate} currentUser={currentUser} />}
+          </>
         ) : (
           <View className="flex-1 items-center justify-center">
             <EmptyState

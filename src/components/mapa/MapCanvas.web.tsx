@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { MapContainer, Marker, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
 
+import { useThemeStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { Plan } from '@/src/types';
 
@@ -43,6 +44,8 @@ type MapCanvasProps = {
 // limpios y de marca que el estilo por defecto de OpenStreetMap). Gratis,
 // sin API key. react-native-maps no tiene build web, por eso esta variante.
 export function MapCanvas({ plans, selectedPlanId, onSelectPlan }: MapCanvasProps) {
+  const isDark = useThemeStore((state) => state.resolvedScheme === 'dark');
+
   return (
     <View style={{ flex: 1 }}>
       <MapContainer
@@ -54,7 +57,8 @@ export function MapCanvas({ plans, selectedPlanId, onSelectPlan }: MapCanvasProp
         scrollWheelZoom
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          key={isDark ? 'dark' : 'light'}
+          url={`https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
           attribution='&copy; OpenStreetMap, &copy; CARTO'
           subdomains="abcd"
           maxZoom={19}

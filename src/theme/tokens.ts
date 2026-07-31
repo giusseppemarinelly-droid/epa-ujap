@@ -3,8 +3,15 @@ import type { TextStyle, ViewStyle } from 'react-native';
 
 export { colors };
 
-// Gradiente insignia de los CTAs primarios (coral -> morado).
-export const epaGradient = [colors.primary, colors.secondary] as const;
+// `colors` es un objeto mutable (ver colors.js): sus valores cambian al
+// alternar tema, pero un array/objeto calculado una sola vez a partir de él
+// al cargar el módulo queda congelado con los valores iniciales. Por eso
+// esto y `categoryAccents` de abajo son funciones, no constantes: se leen
+// en cada uso, después de que el remount por cambio de tema ya aplicó la
+// paleta correspondiente.
+export function getEpaGradient() {
+  return [colors.primary, colors.secondary] as const;
+}
 
 export const typography = {
   headlineXl: { fontFamily: 'Inter_800ExtraBold', fontSize: 32, lineHeight: 40, letterSpacing: -0.6 },
@@ -55,10 +62,12 @@ export const elevation = {
 
 // Un color por categoría de grupo, para que la lista de Grupos no se vea
 // monocromática (antes todo usaba el mismo círculo morado clarito).
-export const categoryAccents: Record<string, { bg: string; fg: string }> = {
-  Académico: { bg: colors['category-academico-bg'], fg: colors['category-academico-fg'] },
-  Deportes: { bg: colors['category-deportes-bg'], fg: colors['category-deportes-fg'] },
-  Tecnología: { bg: colors['category-tecnologia-bg'], fg: colors['category-tecnologia-fg'] },
-  Creatividad: { bg: colors['category-creatividad-bg'], fg: colors['category-creatividad-fg'] },
-  Arte: { bg: colors['category-arte-bg'], fg: colors['category-arte-fg'] },
-};
+export function getCategoryAccents(): Record<string, { bg: string; fg: string }> {
+  return {
+    Académico: { bg: colors['category-academico-bg'], fg: colors['category-academico-fg'] },
+    Deportes: { bg: colors['category-deportes-bg'], fg: colors['category-deportes-fg'] },
+    Tecnología: { bg: colors['category-tecnologia-bg'], fg: colors['category-tecnologia-fg'] },
+    Creatividad: { bg: colors['category-creatividad-bg'], fg: colors['category-creatividad-fg'] },
+    Arte: { bg: colors['category-arte-bg'], fg: colors['category-arte-fg'] },
+  };
+}

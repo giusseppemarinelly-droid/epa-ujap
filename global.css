@@ -1,3 +1,113 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Tokens de color como variables CSS: los mismos nombres de clase
+   (bg-surface, text-on-surface, etc.) cambian de valor solos según el
+   modo activo, sin tocar cada pantalla. Ver src/theme/colors.js para la
+   versión JS (usada en color= de íconos, gradientes, mapas). */
+@layer base {
+  :root {
+    --color-surface: 253 249 248;
+    --color-surface-dim: 227 211 206;
+    --color-surface-bright: 253 249 248;
+    --color-surface-container-lowest: 255 255 255;
+    --color-surface-container-low: 248 241 238;
+    --color-surface-container: 243 233 229;
+    --color-surface-container-high: 237 221 215;
+    --color-surface-container-highest: 230 210 202;
+    --color-on-surface: 34 28 27;
+    --color-on-surface-variant: 110 100 112;
+    --color-inverse-surface: 51 44 42;
+    --color-inverse-on-surface: 248 241 238;
+    --color-outline: 140 113 109;
+    --color-outline-variant: 224 191 187;
+    --color-primary: 255 111 97;
+    --color-on-primary: 255 255 255;
+    --color-primary-container: 255 218 213;
+    --color-on-primary-container: 111 2 5;
+    --color-primary-dim: 172 51 42;
+    --color-primary-fixed: 255 218 213;
+    --color-primary-fixed-dim: 255 180 170;
+    --color-secondary: 107 91 149;
+    --color-on-secondary: 255 255 255;
+    --color-secondary-container: 233 221 255;
+    --color-on-secondary-container: 77 61 117;
+    --color-tertiary: 79 95 125;
+    --color-on-tertiary: 255 255 255;
+    --color-tertiary-container: 215 226 255;
+    --color-on-tertiary-container: 37 52 80;
+    --color-error: 186 26 26;
+    --color-on-error: 255 255 255;
+    --color-error-container: 255 218 214;
+    --color-on-error-container: 147 0 10;
+    --color-background: 253 249 248;
+    --color-on-background: 34 28 27;
+    --color-ujap-navy: 19 35 62;
+    --color-ujap-gold: 204 160 79;
+    --color-ujap-gold-container: 251 238 210;
+    --color-on-ujap-gold-container: 107 79 15;
+    --color-category-academico-bg: 233 221 255;
+    --color-category-academico-fg: 77 61 117;
+    --color-category-deportes-bg: 215 242 225;
+    --color-category-deportes-fg: 30 122 70;
+    --color-category-tecnologia-bg: 215 231 255;
+    --color-category-tecnologia-fg: 29 95 168;
+    --color-category-creatividad-bg: 255 227 209;
+    --color-category-creatividad-fg: 180 87 10;
+    --color-category-arte-bg: 255 217 236;
+    --color-category-arte-fg: 176 40 107;
+  }
+
+  .dark:root {
+    --color-surface: 23 19 20;
+    --color-surface-dim: 23 19 20;
+    --color-surface-bright: 58 51 53;
+    --color-surface-container-lowest: 18 14 15;
+    --color-surface-container-low: 31 26 27;
+    --color-surface-container: 36 30 32;
+    --color-surface-container-high: 47 40 42;
+    --color-surface-container-highest: 58 51 53;
+    --color-on-surface: 242 233 231;
+    --color-on-surface-variant: 203 191 199;
+    --color-inverse-surface: 242 233 231;
+    --color-inverse-on-surface: 36 30 32;
+    --color-outline: 155 141 137;
+    --color-outline-variant: 79 69 71;
+    --color-primary: 255 138 125;
+    --color-on-primary: 92 18 8;
+    --color-primary-container: 125 42 32;
+    --color-on-primary-container: 255 218 213;
+    --color-primary-dim: 255 111 97;
+    --color-primary-fixed: 255 218 213;
+    --color-primary-fixed-dim: 255 180 170;
+    --color-secondary: 202 190 255;
+    --color-on-secondary: 52 38 92;
+    --color-secondary-container: 77 61 117;
+    --color-on-secondary-container: 233 221 255;
+    --color-tertiary: 175 198 255;
+    --color-on-tertiary: 26 45 76;
+    --color-tertiary-container: 37 52 80;
+    --color-on-tertiary-container: 215 226 255;
+    --color-error: 255 180 171;
+    --color-on-error: 105 0 5;
+    --color-error-container: 147 0 10;
+    --color-on-error-container: 255 218 214;
+    --color-background: 23 19 20;
+    --color-on-background: 242 233 231;
+    --color-ujap-navy: 19 35 62;
+    --color-ujap-gold: 227 185 104;
+    --color-ujap-gold-container: 74 58 18;
+    --color-on-ujap-gold-container: 251 238 210;
+    --color-category-academico-bg: 58 48 96;
+    --color-category-academico-fg: 216 200 255;
+    --color-category-deportes-bg: 31 61 42;
+    --color-category-deportes-fg: 159 232 184;
+    --color-category-tecnologia-bg: 31 50 77;
+    --color-category-tecnologia-fg: 168 203 255;
+    --color-category-creatividad-bg: 74 46 20;
+    --color-category-creatividad-fg: 255 199 154;
+    --color-category-arte-bg: 74 31 53;
+    --color-category-arte-fg: 255 176 219;
+  }
+}

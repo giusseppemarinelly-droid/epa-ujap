@@ -27,6 +27,7 @@ export type User = {
   interestIds: string[];
   lookingFor: LookingFor[];
   online: boolean;
+  mutualConnections: PersonSummary[];
   stats: {
     plansCreated: number;
     attendances: number;

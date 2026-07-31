@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { colors, elevation, epaGradient, radii } from '@/src/theme/tokens';
+import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import { useDiscoverStore } from '@/src/store';
 
 type CircleButtonProps = {
@@ -63,7 +63,7 @@ export function ActionButtons({ userId, canUndo }: ActionButtonsProps) {
         style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.9 : 1 }] })}
       >
         <LinearGradient
-          colors={epaGradient}
+          colors={getEpaGradient()}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[

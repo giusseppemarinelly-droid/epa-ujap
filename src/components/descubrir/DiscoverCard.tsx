@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { Chip } from '@/src/components/ui';
 import { useAuthStore } from '@/src/store';
-import { colors, epaGradient, radii } from '@/src/theme/tokens';
+import { colors, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { User } from '@/src/types';
 
 type DiscoverCardProps = {
@@ -32,7 +32,7 @@ export function DiscoverCard({ user }: DiscoverCardProps) {
         <Image key={currentPhoto} source={{ uri: currentPhoto }} className="absolute inset-0 w-full h-full" resizeMode="cover" />
       ) : (
         <LinearGradient
-          colors={epaGradient}
+          colors={getEpaGradient()}
           start={{ x: 0.1, y: 0 }}
           end={{ x: 0.9, y: 1 }}
           style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
