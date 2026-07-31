@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { FeaturedGroupBanner } from '@/src/components/grupos/FeaturedGroupBanner';
 import { GroupCard } from '@/src/components/grupos/GroupCard';
-import { Button, Card, Chip } from '@/src/components/ui';
+import { Chip } from '@/src/components/ui';
 import { useAuthStore, useGroupsStore } from '@/src/store';
-import { colors } from '@/src/theme/tokens';
+import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { GroupCategory } from '@/src/types';
 
 const categories: GroupCategory[] = ['Académico', 'Deportes', 'Tecnología', 'Creatividad', 'Arte'];
@@ -96,21 +97,37 @@ export default function GruposScreen() {
           />
         ))}
 
-        <Card className="items-center mt-4">
+        <LinearGradient
+          colors={getEpaGradient()}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[{ borderRadius: radii.lg, padding: 24, alignItems: 'center', marginTop: 16 }, elevation.card]}
+        >
           <View
-            className="items-center justify-center rounded-full mb-1"
-            style={{ width: 56, height: 56, backgroundColor: colors['primary-container'] }}
+            className="items-center justify-center rounded-full mb-3"
+            style={{ width: 56, height: 56, backgroundColor: 'rgba(255,255,255,0.25)' }}
           >
-            <MaterialIcons name="groups" size={26} color={colors.primary} />
+            <MaterialIcons name="groups" size={26} color="#FFFFFF" />
           </View>
-          <Text className="text-on-surface text-center mt-2" style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}>
+          <Text className="text-white text-center" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 18 }}>
             ¿No encuentras tu grupo?
           </Text>
-          <Text className="text-on-surface-variant text-center mt-1 mb-4">
+          <Text className="text-white/90 text-center mt-1 mb-4" style={{ fontSize: 13 }}>
             Crea tu propio grupo de interés e invita a más gente de la UJAP.
           </Text>
-          <Button label="Crear grupo" variant="ghost" onPress={() => router.push('/group/new')} />
-        </Card>
+          <Pressable
+            onPress={() => router.push('/group/new')}
+            className="bg-white rounded-full px-6"
+            style={({ pressed }) => [
+              { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+              pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
+            ]}
+          >
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: colors.primary }}>
+              Crear grupo
+            </Text>
+          </Pressable>
+        </LinearGradient>
       </ScrollView>
     </SafeAreaView>
   );
