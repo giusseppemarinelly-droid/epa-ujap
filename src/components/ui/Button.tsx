@@ -41,7 +41,7 @@ export function Button({
         onPress={onPress}
         disabled={isDisabled}
         className={`items-center justify-center rounded-full border-2 border-primary px-8 ${fullWidth ? 'w-full' : ''} ${isDisabled ? 'opacity-50' : ''}`}
-        style={{ minHeight: 56 }}
+        style={({ pressed }) => [{ minHeight: 56 }, pressed && { transform: [{ scale: 0.97 }], opacity: 0.85 }]}
       >
         {content}
       </Pressable>
@@ -53,6 +53,7 @@ export function Button({
       onPress={onPress}
       disabled={isDisabled}
       className={`${fullWidth ? 'w-full' : ''} ${isDisabled ? 'opacity-50' : ''}`}
+      style={({ pressed }) => pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 }}
     >
       <LinearGradient
         colors={epaGradient}

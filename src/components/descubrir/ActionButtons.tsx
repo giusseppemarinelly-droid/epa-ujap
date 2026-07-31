@@ -20,7 +20,16 @@ function CircleButton({ icon, size, backgroundColor, iconColor, onPress, disable
       onPress={onPress}
       disabled={disabled}
       className="items-center justify-center rounded-full"
-      style={[{ width: size, height: size, backgroundColor, opacity: disabled ? 0.4 : 1 }, elevation.card]}
+      style={({ pressed }) => [
+        {
+          width: size,
+          height: size,
+          backgroundColor,
+          opacity: disabled ? 0.4 : 1,
+          transform: [{ scale: pressed ? 0.88 : 1 }],
+        },
+        elevation.card,
+      ]}
     >
       <MaterialIcons name={icon} size={size * 0.45} color={iconColor} />
     </Pressable>
@@ -49,7 +58,10 @@ export function ActionButtons({ userId, canUndo }: ActionButtonsProps) {
         iconColor={colors['on-surface']}
         onPress={() => descartar(userId)}
       />
-      <Pressable onPress={() => conectar(userId)}>
+      <Pressable
+        onPress={() => conectar(userId)}
+        style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.9 : 1 }] })}
+      >
         <LinearGradient
           colors={epaGradient}
           start={{ x: 0, y: 0 }}

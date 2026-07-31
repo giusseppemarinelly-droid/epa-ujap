@@ -53,8 +53,15 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
   conectar: (userId) => {
     set(removeFromQueue('conectado')(userId));
     // Pequeño golpe táctil al mandar la solicitud, tanto por botón como por
-    // swipe, para que la acción se sienta más viva en el teléfono.
-    if (Platform.OS !== 'web') {
+    // swipe. En nativo usa el motor de haptics del teléfono; en web (la PWA)
+    // recurre a la Vibration API, que Android soporta pero iOS Safari no
+    // implementa en absoluto (ni instalada como PWA) — eso es una
+    // restricción de Apple, no hay forma de sortearla desde el navegador.
+    if (Platform.OS === 'web') {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(30);
+      }
+    } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
     apiRequest('/connections', { method: 'POST', body: { receiverId: userId } }).catch(() => {
