@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Text, TextInput, View, type TextInputProps } from 'react-native';
 
+import { colors } from '@/src/theme/tokens';
+
 type InputProps = TextInputProps & {
   label?: string;
 };
@@ -19,12 +21,11 @@ export function Input({ label, style, onFocus, onBlur, ...props }: InputProps) {
         </Text>
       )}
       <TextInput
-        className="rounded-md px-4 py-3 text-on-surface"
+        className="rounded-md px-4 py-3 text-on-surface bg-surface-container"
         style={[
           {
-            backgroundColor: '#EAEAEA',
             borderWidth: 2,
-            borderColor: focused ? '#FF6F61' : 'transparent',
+            borderColor: focused ? colors.primary : 'transparent',
             fontFamily: 'Inter_400Regular',
             fontSize: 16,
           },
@@ -38,7 +39,7 @@ export function Input({ label, style, onFocus, onBlur, ...props }: InputProps) {
           setFocused(false);
           onBlur?.(e);
         }}
-        placeholderTextColor="#8C716D"
+        placeholderTextColor={colors.outline}
         {...props}
       />
     </View>

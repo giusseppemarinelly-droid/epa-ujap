@@ -6,14 +6,37 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Avatar, Badge, Button, Card, Chip } from '@/src/components/ui';
-import { useAuthStore, useGroupsStore, useThemeStore, type ThemePreference } from '@/src/store';
+import { useAuthStore, useGroupsStore, useThemeStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
-const themeOptions: { value: ThemePreference; label: string }[] = [
-  { value: 'light', label: 'Claro' },
-  { value: 'dark', label: 'Oscuro' },
-  { value: 'system', label: 'Sistema' },
-];
+function ThemeToggle() {
+  const resolvedScheme = useThemeStore((state) => state.resolvedScheme);
+  const setThemePreference = useThemeStore((state) => state.setThemePreference);
+  const isDark = resolvedScheme === 'dark';
+
+  return (
+    <Pressable
+      onPress={() => setThemePreference(isDark ? 'light' : 'dark')}
+      className="flex-row bg-surface-container rounded-full p-1 self-start"
+      style={{ width: 104 }}
+    >
+      <View
+        className="flex-1 items-center justify-center rounded-full flex-row"
+        style={{ height: 36, backgroundColor: !isDark ? colors.primary : 'transparent', gap: 4 }}
+      >
+        <MaterialIcons name="light-mode" size={15} color={!isDark ? '#FFFFFF' : colors['on-surface-variant']} />
+        {!isDark && <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 12 }}>Claro</Text>}
+      </View>
+      <View
+        className="flex-1 items-center justify-center rounded-full flex-row"
+        style={{ height: 36, backgroundColor: isDark ? colors.primary : 'transparent', gap: 4 }}
+      >
+        <MaterialIcons name="dark-mode" size={15} color={isDark ? '#FFFFFF' : colors['on-surface-variant']} />
+        {isDark && <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 12 }}>Oscuro</Text>}
+      </View>
+    </Pressable>
+  );
+}
 
 export default function PerfilScreen() {
   const router = useRouter();
@@ -23,8 +46,6 @@ export default function PerfilScreen() {
   const uploadPhoto = useAuthStore((state) => state.uploadPhoto);
   const groups = useGroupsStore((state) => state.groups);
   const fetchGroups = useGroupsStore((state) => state.fetchGroups);
-  const themePreference = useThemeStore((state) => state.preference);
-  const setThemePreference = useThemeStore((state) => state.setThemePreference);
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
@@ -72,7 +93,7 @@ export default function PerfilScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        <View style={{ height: 140 }} className="bg-ujap-navy">
+        <View style={{ height: 200 }} className="bg-ujap-navy">
           <Image
             source={{ uri: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&q=80' }}
             style={{ width: '100%', height: '100%' }}
@@ -196,16 +217,7 @@ export default function PerfilScreen() {
           <Text className="text-on-surface mb-3" style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}>
             Apariencia
           </Text>
-          <View className="flex-row gap-2">
-            {themeOptions.map((option) => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                selected={themePreference === option.value}
-                onPress={() => setThemePreference(option.value)}
-              />
-            ))}
-          </View>
+          <ThemeToggle />
         </View>
 
         <View className="px-margin-mobile mt-4 gap-3">

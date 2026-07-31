@@ -1,8 +1,22 @@
-import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import { Tabs, useRouter } from 'expo-router';
 
 import { CustomTabBar } from '@/src/components/navigation/CustomTabBar';
+import { useAuthStore } from '@/src/store';
 
 export default function TabsLayout() {
+  const router = useRouter();
+  const status = useAuthStore((state) => state.status);
+
+  // Cerrar sesión (o que el token deje de ser válido) solo cambia el estado
+  // global; sin esto, la pantalla en la que estabas se queda mostrando "sin
+  // usuario" en vez de sacarte de las pestañas.
+  useEffect(() => {
+    if (status === 'signed-out') {
+      router.replace('/login');
+    }
+  }, [status, router]);
+
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
