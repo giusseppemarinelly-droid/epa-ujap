@@ -92,7 +92,7 @@ export default function NewChatScreen() {
               className="flex-row items-center bg-surface-container-lowest rounded-md p-3 mb-2"
               style={{ borderWidth: 2, borderColor: isSelected ? colors.primary : 'transparent' }}
             >
-              <Avatar uri={item.photoUrl} size={44} />
+              <Avatar uri={item.photoUrl} size={44} online={item.online} />
               <View className="ml-3 flex-1">
                 <Text className="text-on-surface" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
                   {item.name}

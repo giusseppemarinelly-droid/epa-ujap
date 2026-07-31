@@ -83,6 +83,7 @@ export type BackendUser = {
   verified: boolean;
   isOrganizer: boolean;
   lookingFor: string[];
+  online: boolean;
   interests?: { interest: { id: string; label: string } }[];
   stats?: { plansCreated: number; attendances: number };
 };
@@ -103,11 +104,12 @@ export function mapUserFromBackend(raw: BackendUser): User {
     isOrganizer: raw.isOrganizer,
     interestIds: raw.interests?.map((entry) => entry.interest.id) ?? [],
     lookingFor: raw.lookingFor.map((value) => lookingForFromBackend[value]).filter(Boolean),
+    online: raw.online,
     stats: raw.stats ?? { plansCreated: 0, attendances: 0 },
   };
 }
 
-type BackendPersonSummary = { id: string; name: string; photoUrl: string | null };
+type BackendPersonSummary = { id: string; name: string; photoUrl: string | null; online: boolean };
 
 export type BackendPlan = {
   id: string;
@@ -127,7 +129,7 @@ export type BackendPlan = {
 };
 
 function mapPersonSummary(raw: BackendPersonSummary) {
-  return { id: raw.id, name: raw.name, photoUrl: raw.photoUrl ?? undefined };
+  return { id: raw.id, name: raw.name, photoUrl: raw.photoUrl ?? undefined, online: raw.online };
 }
 
 export function mapPlanFromBackend(raw: BackendPlan): Plan {
@@ -193,12 +195,14 @@ export function mapConversationFromBackend(raw: BackendConversation, currentUser
   const otherParticipant = raw.participants.find((participant) => participant.userId !== currentUserId);
   const title = raw.title ?? (type === 'directa' ? (otherParticipant?.user.name ?? 'Conversación') : 'Grupo');
   const avatarUrl = type === 'directa' ? (otherParticipant?.user.photoUrl ?? undefined) : undefined;
+  const online = type === 'directa' ? otherParticipant?.user.online : undefined;
 
   return {
     id: raw.id,
     type,
     title,
     avatarUrl,
+    online,
     participantIds: raw.participants.map((participant) => participant.userId),
     unreadCount: raw.unreadCount,
     lastMessageText: raw.lastMessage?.text,

@@ -26,6 +26,7 @@ export type User = {
   isOrganizer: boolean;
   interestIds: string[];
   lookingFor: LookingFor[];
+  online: boolean;
   stats: {
     plansCreated: number;
     attendances: number;
@@ -40,6 +41,7 @@ export type PersonSummary = {
   id: string;
   name: string;
   photoUrl?: string;
+  online: boolean;
 };
 
 export type Plan = {
@@ -83,6 +85,7 @@ export type Conversation = {
   type: ConversationType;
   title: string;
   avatarUrl?: string;
+  online?: boolean;
   participantIds: string[];
   unreadCount: number;
   lastMessageText?: string;

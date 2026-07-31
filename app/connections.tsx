@@ -38,6 +38,8 @@ export default function ConnectionsScreen() {
 
   useEffect(() => {
     fetchAll();
+    const interval = setInterval(fetchAll, 8000);
+    return () => clearInterval(interval);
   }, [fetchAll]);
 
   async function handleRespond(request: IncomingRequest, accept: boolean) {
@@ -88,7 +90,7 @@ export default function ConnectionsScreen() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
           renderItem={({ item }) => (
             <View className="flex-row items-center bg-surface-container-lowest rounded-md p-3 mb-2">
-              <Avatar uri={item.requester.photoUrl} size={48} />
+              <Avatar uri={item.requester.photoUrl} size={48} online={item.requester.online} />
               <View className="ml-3 flex-1">
                 <Text className="text-on-surface" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
                   {item.requester.name}
@@ -133,7 +135,7 @@ export default function ConnectionsScreen() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
           renderItem={({ item }) => (
             <View className="flex-row items-center bg-surface-container-lowest rounded-md p-3 mb-2">
-              <Avatar uri={item.receiver.photoUrl} size={48} />
+              <Avatar uri={item.receiver.photoUrl} size={48} online={item.receiver.online} />
               <View className="ml-3 flex-1">
                 <Text className="text-on-surface" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
                   {item.receiver.name}

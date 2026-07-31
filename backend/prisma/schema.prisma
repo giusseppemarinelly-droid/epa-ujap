@@ -85,6 +85,7 @@ model User {
   isOrganizer       Boolean      @default(false)
   role              Role         @default(STUDENT)
   lookingFor        LookingFor[]
+  lastSeenAt        DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 

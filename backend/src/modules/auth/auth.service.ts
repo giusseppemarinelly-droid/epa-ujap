@@ -200,3 +200,10 @@ export async function getMe(userId: string) {
   }
   return user;
 }
+
+// El front llama esto cada pocos segundos mientras la app está abierta; de
+// ahí se deriva el estado "en línea" (sin websockets) comparando esta marca
+// de tiempo contra un umbral corto al serializar cualquier usuario.
+export async function heartbeat(userId: string) {
+  await prisma.user.update({ where: { id: userId }, data: { lastSeenAt: new Date() } });
+}

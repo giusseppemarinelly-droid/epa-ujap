@@ -88,6 +88,14 @@ export function DiscoverCard({ user }: DiscoverCardProps) {
               style={{ marginLeft: 6 }}
             />
           )}
+          {user.online && (
+            <View className="flex-row items-center ml-3">
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' }} />
+              <Text className="text-white/90 ml-1" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>
+                En línea
+              </Text>
+            </View>
+          )}
         </View>
         <Text className="text-white/90 mt-1" style={{ fontSize: 14 }}>
           {user.career}

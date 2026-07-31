@@ -53,6 +53,7 @@ type AuthState = {
   uploadPhoto: (imageBase64: string, mimeType: string) => Promise<void>;
   addGalleryPhoto: (imageBase64: string, mimeType: string) => Promise<void>;
   removeGalleryPhoto: (photoUrl: string) => Promise<void>;
+  sendHeartbeat: () => Promise<void>;
 };
 
 const emptyDraft: OnboardingDraft = {
@@ -223,5 +224,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       body: { photoUrl },
     });
     set({ currentUser: mapUserFromBackend(updated) });
+  },
+
+  // "En línea" se deriva en el backend a partir de esta marca de tiempo, sin
+  // websockets: mientras la app está abierta la vamos refrescando seguido.
+  sendHeartbeat: async () => {
+    try {
+      await apiRequest('/auth/heartbeat', { method: 'POST' });
+    } catch {
+      // Si falla un heartbeat no pasa nada, el siguiente lo intenta de nuevo.
+    }
   },
 }));

@@ -16,6 +16,7 @@ export default function ChatScreen() {
   const conversations = useConversationsStore((state) => state.conversations);
   const messagesByConversation = useConversationsStore((state) => state.messagesByConversation);
   const fetchMessages = useConversationsStore((state) => state.fetchMessages);
+  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
   const sendMessage = useConversationsStore((state) => state.sendMessage);
   const markRead = useConversationsStore((state) => state.markRead);
 
@@ -27,18 +28,19 @@ export default function ChatScreen() {
   const messages = messagesByConversation[id ?? ''] ?? [];
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !currentUserId) return;
     fetchMessages(id);
     markRead(id);
     // Sin websockets todavía: mientras el chat está abierto, refrescamos
-    // cada pocos segundos para que los mensajes nuevos aparezcan solos,
-    // como en WhatsApp, sin que el usuario tenga que recargar la página.
+    // cada pocos segundos para que los mensajes nuevos y el estado "en
+    // línea" de la otra persona aparezcan solos, sin recargar la página.
     const interval = setInterval(() => {
       fetchMessages(id);
       markRead(id);
+      fetchConversations(currentUserId);
     }, 3000);
     return () => clearInterval(interval);
-  }, [id, fetchMessages, markRead]);
+  }, [id, currentUserId, fetchMessages, markRead, fetchConversations]);
 
   async function handleSend() {
     if (!text.trim() || sending || !id) return;
@@ -58,14 +60,26 @@ export default function ChatScreen() {
         <Pressable onPress={() => router.back()} className="mr-2 p-1">
           <MaterialIcons name="arrow-back" size={22} color={colors['on-surface']} />
         </Pressable>
-        <Avatar uri={conversation?.avatarUrl} size={36} />
-        <Text
-          className="text-on-surface ml-2 flex-1"
-          style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}
-          numberOfLines={1}
-        >
-          {conversation?.title ?? 'Chat'}
-        </Text>
+        <Avatar uri={conversation?.avatarUrl} size={36} online={conversation?.online} />
+        <View className="ml-2 flex-1">
+          <Text
+            className="text-on-surface"
+            style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}
+            numberOfLines={1}
+          >
+            {conversation?.title ?? 'Chat'}
+          </Text>
+          {conversation?.type === 'directa' && (
+            <Text
+              style={{
+                fontSize: 12,
+                color: conversation.online ? '#22C55E' : colors['on-surface-variant'],
+              }}
+            >
+              {conversation.online ? 'En línea' : 'Desconectado'}
+            </Text>
+          )}
+        </View>
       </View>
 
       <FlatList

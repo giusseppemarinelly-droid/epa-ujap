@@ -22,7 +22,7 @@ export function ConversationRow({ conversation, lastMessage, lastMessageAt, onPr
       className="flex-row items-center bg-surface-container-lowest rounded-md p-3 mb-3"
     >
       {conversation.avatarUrl ? (
-        <Avatar uri={conversation.avatarUrl} size={48} />
+        <Avatar uri={conversation.avatarUrl} size={48} online={isGroupLike ? false : conversation.online} />
       ) : (
         <View
           className="items-center justify-center rounded-full bg-secondary-container"

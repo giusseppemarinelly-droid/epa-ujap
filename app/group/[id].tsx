@@ -137,7 +137,7 @@ export default function GroupDetailScreen() {
           {(group.members ?? []).map((member) => (
             <Card key={member.id} className="flex-row items-center mb-2" padded={false}>
               <View className="flex-row items-center p-3">
-                <Avatar uri={member.photoUrl} size={40} />
+                <Avatar uri={member.photoUrl} size={40} online={member.online} />
                 <Text className="text-on-surface ml-3" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
                   {member.name}
                 </Text>

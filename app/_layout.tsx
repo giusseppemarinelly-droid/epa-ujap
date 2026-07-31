@@ -28,11 +28,19 @@ export default function RootLayout() {
   const authStatus = useAuthStore((state) => state.status);
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const loadInterests = useAuthStore((state) => state.loadInterests);
+  const sendHeartbeat = useAuthStore((state) => state.sendHeartbeat);
 
   useEffect(() => {
     restoreSession();
     loadInterests();
   }, [restoreSession, loadInterests]);
+
+  useEffect(() => {
+    if (authStatus !== 'signed-in') return;
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 20000);
+    return () => clearInterval(interval);
+  }, [authStatus, sendHeartbeat]);
 
   const ready = fontsLoaded && authStatus !== 'checking';
 

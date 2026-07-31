@@ -38,6 +38,11 @@ export async function loginHandler(req: Request, res: Response) {
   res.json({ token, user: sanitizeUser(user) });
 }
 
+export async function heartbeatHandler(req: Request, res: Response) {
+  await authService.heartbeat(req.userId!);
+  res.json({ ok: true });
+}
+
 export async function meHandler(req: Request, res: Response) {
   const user = await authService.getMe(req.userId!);
   const { _count, ...rest } = user;
