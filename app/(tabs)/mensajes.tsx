@@ -27,11 +27,16 @@ export default function MensajesScreen() {
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    if (currentUserId) fetchConversations(currentUserId);
+    if (!currentUserId) return;
+    fetchConversations(currentUserId);
+    const interval = setInterval(() => fetchConversations(currentUserId), 6000);
+    return () => clearInterval(interval);
   }, [currentUserId, fetchConversations]);
 
   useEffect(() => {
     fetchConnections();
+    const interval = setInterval(fetchConnections, 6000);
+    return () => clearInterval(interval);
   }, [fetchConnections]);
 
   const filtered = useMemo(() => {

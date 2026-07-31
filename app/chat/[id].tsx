@@ -30,6 +30,14 @@ export default function ChatScreen() {
     if (!id) return;
     fetchMessages(id);
     markRead(id);
+    // Sin websockets todavía: mientras el chat está abierto, refrescamos
+    // cada pocos segundos para que los mensajes nuevos aparezcan solos,
+    // como en WhatsApp, sin que el usuario tenga que recargar la página.
+    const interval = setInterval(() => {
+      fetchMessages(id);
+      markRead(id);
+    }, 3000);
+    return () => clearInterval(interval);
   }, [id, fetchMessages, markRead]);
 
   async function handleSend() {
