@@ -34,19 +34,31 @@ export const spacing = {
 };
 
 // Niveles de elevación descritos en el design system ("Elevation & Depth").
+// Un poco más marcados que la versión original (0.05 de opacidad se sentía
+// plano sobre el fondo casi blanco) para que las tarjetas tengan presencia.
 export const elevation = {
   card: {
     shadowColor: colors['ujap-navy'],
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.09,
+    shadowRadius: 18,
+    elevation: 4,
   } satisfies ViewStyle,
   floating: {
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
     elevation: 6,
   } satisfies ViewStyle,
+};
+
+// Un color por categoría de grupo, para que la lista de Grupos no se vea
+// monocromática (antes todo usaba el mismo círculo morado clarito).
+export const categoryAccents: Record<string, { bg: string; fg: string }> = {
+  Académico: { bg: colors['category-academico-bg'], fg: colors['category-academico-fg'] },
+  Deportes: { bg: colors['category-deportes-bg'], fg: colors['category-deportes-fg'] },
+  Tecnología: { bg: colors['category-tecnologia-bg'], fg: colors['category-tecnologia-fg'] },
+  Creatividad: { bg: colors['category-creatividad-bg'], fg: colors['category-creatividad-fg'] },
+  Arte: { bg: colors['category-arte-bg'], fg: colors['category-arte-fg'] },
 };

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Avatar } from '@/src/components/ui';
+import { Avatar, EmptyState } from '@/src/components/ui';
 import { useConnectionsStore, type IncomingRequest, type SentRequest } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -119,11 +119,8 @@ export default function ConnectionsScreen() {
           )}
           ListEmptyComponent={
             loading ? null : (
-              <View className="items-center mt-10">
-                <MaterialIcons name="waving-hand" size={40} color={colors['on-surface-variant']} />
-                <Text className="text-on-surface-variant mt-3 text-center">
-                  No tienes solicitudes nuevas por ahora.
-                </Text>
+              <View className="mt-10">
+                <EmptyState icon="waving-hand" title="No tienes solicitudes nuevas por ahora" />
               </View>
             )
           }
@@ -151,11 +148,8 @@ export default function ConnectionsScreen() {
           )}
           ListEmptyComponent={
             loading ? null : (
-              <View className="items-center mt-10">
-                <MaterialIcons name="send" size={40} color={colors['on-surface-variant']} />
-                <Text className="text-on-surface-variant mt-3 text-center">
-                  Todavía no le has mandado un epa a nadie.
-                </Text>
+              <View className="mt-10">
+                <EmptyState icon="send" title="Todavía no le has mandado un epa a nadie" />
               </View>
             )
           }

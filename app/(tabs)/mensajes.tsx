@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ConversationRow } from '@/src/components/mensajes/ConversationRow';
+import { EmptyState } from '@/src/components/ui';
 import { useAuthStore, useConnectionsStore, useConversationsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -118,11 +119,12 @@ export default function MensajesScreen() {
           />
         )}
         ListEmptyComponent={
-          <View className="items-center mt-10">
-            <MaterialIcons name="forum" size={40} color={colors['on-surface-variant']} />
-            <Text className="text-on-surface-variant mt-3 text-center">
-              Todavía no tienes chats aquí.{'\n'}Échale un epa a alguien desde Descubrir.
-            </Text>
+          <View className="mt-10">
+            <EmptyState
+              icon="forum"
+              title="Todavía no tienes chats aquí"
+              description="Échale un epa a alguien desde Descubrir."
+            />
           </View>
         }
       />

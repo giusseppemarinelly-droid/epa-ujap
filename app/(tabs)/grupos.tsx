@@ -97,7 +97,12 @@ export default function GruposScreen() {
         ))}
 
         <Card className="items-center mt-4">
-          <MaterialIcons name="groups" size={28} color={colors.primary} />
+          <View
+            className="items-center justify-center rounded-full mb-1"
+            style={{ width: 56, height: 56, backgroundColor: colors['primary-container'] }}
+          >
+            <MaterialIcons name="groups" size={26} color={colors.primary} />
+          </View>
           <Text className="text-on-surface text-center mt-2" style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}>
             ¿No encuentras tu grupo?
           </Text>

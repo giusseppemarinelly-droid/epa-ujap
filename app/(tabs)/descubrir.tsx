@@ -7,7 +7,7 @@ import { ActionButtons } from '@/src/components/descubrir/ActionButtons';
 import { DiscoverCard } from '@/src/components/descubrir/DiscoverCard';
 import { FiltersSheet, type DiscoverFilters } from '@/src/components/descubrir/FiltersSheet';
 import { SwipeableCard } from '@/src/components/descubrir/SwipeableCard';
-import { Avatar } from '@/src/components/ui';
+import { Avatar, EmptyState } from '@/src/components/ui';
 import { useAuthStore, useDiscoverStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -77,10 +77,11 @@ export default function DescubrirScreen() {
           </SwipeableCard>
         ) : (
           <View className="flex-1 items-center justify-center">
-            <MaterialIcons name="groups" size={48} color={colors['on-surface-variant']} />
-            <Text className="text-on-surface-variant text-center mt-3">
-              Epa, ya viste a todos por ahora.{'\n'}Vuelve más tarde por caras nuevas.
-            </Text>
+            <EmptyState
+              icon="groups"
+              title="Epa, ya viste a todos por ahora"
+              description="Vuelve más tarde por caras nuevas."
+            />
           </View>
         )}
       </View>

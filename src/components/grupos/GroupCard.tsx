@@ -2,7 +2,7 @@ import { Image, Pressable, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Card } from '@/src/components/ui';
-import { colors } from '@/src/theme/tokens';
+import { categoryAccents } from '@/src/theme/tokens';
 import type { Group, GroupCategory } from '@/src/types';
 
 const CATEGORY_ICON: Record<GroupCategory, keyof typeof MaterialIcons.glyphMap> = {
@@ -21,6 +21,8 @@ type GroupCardProps = {
 };
 
 export function GroupCard({ group, isMember, onPress, onToggleMembership }: GroupCardProps) {
+  const accent = categoryAccents[group.category];
+
   return (
     <Pressable onPress={onPress}>
       <Card className="flex-row items-center mb-3">
@@ -28,14 +30,10 @@ export function GroupCard({ group, isMember, onPress, onToggleMembership }: Grou
           <Image source={{ uri: group.imageUrl }} style={{ width: 48, height: 48, borderRadius: 16 }} />
         ) : (
           <View
-            className="items-center justify-center rounded-md bg-secondary-container"
-            style={{ width: 48, height: 48 }}
+            className="items-center justify-center rounded-md"
+            style={{ width: 48, height: 48, backgroundColor: accent.bg }}
           >
-            <MaterialIcons
-              name={CATEGORY_ICON[group.category]}
-              size={22}
-              color={colors['on-secondary-container']}
-            />
+            <MaterialIcons name={CATEGORY_ICON[group.category]} size={22} color={accent.fg} />
           </View>
         )}
         <View className="flex-1 ml-3">

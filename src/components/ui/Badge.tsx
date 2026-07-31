@@ -10,15 +10,16 @@ type BadgeProps = {
 };
 
 export function Badge({ label, icon = 'verified', tone = 'gold' }: BadgeProps) {
-  const iconColor = tone === 'gold' ? colors['ujap-gold'] : colors.primary;
+  const iconColor = tone === 'gold' ? colors['on-ujap-gold-container'] : colors['on-primary-container'];
+  const backgroundColor = tone === 'gold' ? colors['ujap-gold-container'] : colors['primary-container'];
 
   return (
-    <View className="flex-row items-center self-start rounded-full bg-surface-container px-3 py-1">
-      <MaterialIcons name={icon} size={14} color={iconColor} />
-      <Text
-        className="text-on-surface ml-1"
-        style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}
-      >
+    <View
+      className="flex-row items-center self-start rounded-full px-3 py-1"
+      style={{ backgroundColor }}
+    >
+      <MaterialIcons name={icon} size={14} color={tone === 'gold' ? colors['ujap-gold'] : colors.primary} />
+      <Text className="ml-1" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: iconColor }}>
         {label}
       </Text>
     </View>

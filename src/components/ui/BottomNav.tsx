@@ -26,11 +26,20 @@ export function BottomNav({ items }: BottomNavProps) {
           onPress={item.onPress}
           className="flex-1 items-center justify-center py-1"
         >
-          <MaterialIcons
-            name={item.icon}
-            size={24}
-            color={item.active ? colors.primary : colors['on-surface-variant']}
-          />
+          <View
+            className="items-center justify-center rounded-full"
+            style={{
+              width: 44,
+              height: 36,
+              backgroundColor: item.active ? colors['primary-container'] : 'transparent',
+            }}
+          >
+            <MaterialIcons
+              name={item.icon}
+              size={22}
+              color={item.active ? colors.primary : colors['on-surface-variant']}
+            />
+          </View>
         </Pressable>
       ))}
     </View>

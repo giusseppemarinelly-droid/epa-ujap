@@ -110,6 +110,12 @@ export default function PerfilScreen() {
 
         <View className="flex-row gap-3 px-margin-mobile mt-6">
           <Card className="flex-1 items-center">
+            <View
+              className="items-center justify-center rounded-full mb-2"
+              style={{ width: 40, height: 40, backgroundColor: colors['primary-container'] }}
+            >
+              <MaterialIcons name="event" size={18} color={colors.primary} />
+            </View>
             <Text className="text-primary" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 24 }}>
               {currentUser.stats.plansCreated}
             </Text>
@@ -121,7 +127,13 @@ export default function PerfilScreen() {
             </Text>
           </Card>
           <Card className="flex-1 items-center">
-            <Text className="text-primary" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 24 }}>
+            <View
+              className="items-center justify-center rounded-full mb-2"
+              style={{ width: 40, height: 40, backgroundColor: colors['secondary-container'] }}
+            >
+              <MaterialIcons name="how-to-reg" size={18} color={colors.secondary} />
+            </View>
+            <Text className="text-secondary" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 24 }}>
               {currentUser.stats.attendances}
             </Text>
             <Text
