@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,15 +15,17 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit() {
     if (!email || !password || submitting) return;
     setSubmitting(true);
+    setError('');
     try {
       await login(email, password);
       router.replace('/(tabs)/mapa');
     } catch (err) {
-      Alert.alert('No se pudo iniciar sesión', err instanceof Error ? err.message : undefined);
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión');
     } finally {
       setSubmitting(false);
     }
@@ -56,6 +58,12 @@ export default function LoginScreen() {
           onChangeText={setEmail}
         />
         <Input label="Contraseña" placeholder="Tu contraseña" secureTextEntry value={password} onChangeText={setPassword} />
+
+        {error ? (
+          <Text className="text-error mb-4" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>
+            {error}
+          </Text>
+        ) : null}
 
         <Button
           label={submitting ? 'Entrando...' : 'Iniciar sesión'}
