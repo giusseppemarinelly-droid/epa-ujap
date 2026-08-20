@@ -7,6 +7,7 @@ import {
   heartbeatHandler,
   loginHandler,
   meHandler,
+  refreshHandler,
   removeGalleryPhotoHandler,
   signupHandler,
   updateProfileHandler,
@@ -20,6 +21,7 @@ authRouter.post('/signup', asyncHandler(signupHandler));
 authRouter.post('/verify', asyncHandler(verifyHandler));
 authRouter.post('/login', asyncHandler(loginHandler));
 authRouter.get('/me', requireAuth, asyncHandler(meHandler));
+authRouter.post('/refresh', requireAuth, asyncHandler(refreshHandler));
 authRouter.post('/heartbeat', requireAuth, asyncHandler(heartbeatHandler));
 authRouter.patch('/me', requireAuth, asyncHandler(updateProfileHandler));
 authRouter.post('/me/photo', requireAuth, asyncHandler(uploadPhotoHandler));

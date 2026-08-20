@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
+import { signToken } from '../../lib/jwt';
 import { sanitizeUser } from '../../lib/sanitizeUser';
 import * as authService from './auth.service';
 
@@ -36,6 +37,14 @@ export async function loginHandler(req: Request, res: Response) {
   const { email, password } = loginSchema.parse(req.body);
   const { token, user } = await authService.login(email, password);
   res.json({ token, user: sanitizeUser(user) });
+}
+
+// Renueva el token en cada arranque con sesión válida. Sin esto el mes de
+// vigencia correría desde el login, y a quien usa la app todos los días lo
+// sacaría igual al día 30. Con la renovación, el mes cuenta desde la última
+// vez que se abrió la app.
+export async function refreshHandler(req: Request, res: Response) {
+  res.json({ token: signToken({ userId: req.userId! }) });
 }
 
 export async function heartbeatHandler(req: Request, res: Response) {
