@@ -7,7 +7,14 @@ import {
   mapUserFromBackend,
   type BackendUser,
 } from '@/src/lib/enumMappers';
-import { clearToken, getToken, setToken } from '@/src/lib/secureStorage';
+import {
+  clearPreference,
+  clearToken,
+  getPreference,
+  getToken,
+  setPreference,
+  setToken,
+} from '@/src/lib/secureStorage';
 import type { Faculty, Interest, LookingFor, User } from '@/src/types';
 
 type OnboardingDraft = {
@@ -65,6 +72,25 @@ const emptyDraft: OnboardingDraft = {
   lookingFor: [],
 };
 
+// La sesión se cierra sola tras un mes sin abrir la app. Se guarda la fecha
+// del último arranque con sesión válida, no la del login: quien entra
+// seguido nunca se desloguea.
+const LAST_ACTIVE_KEY = 'epa_last_active_at';
+const SESSION_MAX_IDLE_MS = 30 * 24 * 60 * 60 * 1000;
+
+async function markActive() {
+  await setPreference(LAST_ACTIVE_KEY, String(Date.now()));
+}
+
+async function isSessionExpired() {
+  const stored = await getPreference(LAST_ACTIVE_KEY);
+  const lastActive = stored ? Number(stored) : 0;
+  // Sin marca previa no se expira nada: es una sesión abierta antes de que
+  // existiera este control, o el primer arranque.
+  if (!lastActive || Number.isNaN(lastActive)) return false;
+  return Date.now() - lastActive > SESSION_MAX_IDLE_MS;
+}
+
 function errorMessage(err: unknown, fallback: string) {
   return err instanceof ApiError ? err.message : fallback;
 }
@@ -82,11 +108,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ status: 'signed-out' });
       return;
     }
+
+    if (await isSessionExpired()) {
+      await clearToken();
+      await clearPreference(LAST_ACTIVE_KEY);
+      set({ status: 'signed-out' });
+      return;
+    }
+
     try {
       const raw = await apiRequest<BackendUser>('/auth/me');
       set({ currentUser: mapUserFromBackend(raw), status: 'signed-in' });
-    } catch {
-      await clearToken();
+      await markActive();
+
+      // Renovar corre el vencimiento del token otro mes desde hoy. Si falla no
+      // pasa nada: el token que ya se tiene sigue siendo válido.
+      try {
+        const renewed = await apiRequest<{ token: string }>('/auth/refresh', { method: 'POST' });
+        await setToken(renewed.token);
+      } catch {
+        // Silencio a propósito: la renovación es una mejora, no un requisito.
+      }
+    } catch (err) {
+      // El token solo se borra si el servidor lo rechaza. Un fallo de red no
+      // debe cerrar la sesión: puede ser que la app se abrió sin internet o
+      // que el backend esté despertando.
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        await clearToken();
+        await clearPreference(LAST_ACTIVE_KEY);
+      }
       set({ status: 'signed-out' });
     }
   },
@@ -162,6 +212,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
       });
 
+      await markActive();
       set({ currentUser: mapUserFromBackend(updated), status: 'signed-in', draft: emptyDraft });
     } catch (err) {
       set({ error: errorMessage(err, 'No se pudo completar el registro') });
@@ -178,6 +229,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: { email, password },
       });
       await setToken(result.token);
+      await markActive();
       set({ currentUser: mapUserFromBackend(result.user), status: 'signed-in' });
     } catch (err) {
       set({ error: errorMessage(err, 'No se pudo iniciar sesión') });
@@ -187,6 +239,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     await clearToken();
+    await clearPreference(LAST_ACTIVE_KEY);
     set({ currentUser: null, status: 'signed-out', draft: emptyDraft });
   },
 

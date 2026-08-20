@@ -42,3 +42,11 @@ export async function setPreference(key: string, value: string): Promise<void> {
   }
   await SecureStore.setItemAsync(key, value);
 }
+
+export async function clearPreference(key: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    window.localStorage.removeItem(key);
+    return;
+  }
+  await SecureStore.deleteItemAsync(key);
+}
