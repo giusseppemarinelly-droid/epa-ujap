@@ -1,6 +1,7 @@
 import MapView from 'react-native-maps';
 
-import type { Plan } from '@/src/types';
+import type { MapPerson, Plan } from '@/src/types';
+import { PersonMarker } from './PersonMarker';
 import { PlanMarker } from './PlanMarker';
 
 const UJAP_REGION = {
@@ -12,11 +13,19 @@ const UJAP_REGION = {
 
 type MapCanvasProps = {
   plans: Plan[];
+  people: MapPerson[];
   selectedPlanId: string | null;
   onSelectPlan: (id: string) => void;
+  onSelectPerson: (id: string) => void;
 };
 
-export function MapCanvas({ plans, selectedPlanId, onSelectPlan }: MapCanvasProps) {
+export function MapCanvas({
+  plans,
+  people,
+  selectedPlanId,
+  onSelectPlan,
+  onSelectPerson,
+}: MapCanvasProps) {
   return (
     <MapView style={{ flex: 1 }} initialRegion={UJAP_REGION}>
       {plans.map((plan) => (
@@ -26,6 +35,9 @@ export function MapCanvas({ plans, selectedPlanId, onSelectPlan }: MapCanvasProp
           selected={plan.id === selectedPlanId}
           onPress={() => onSelectPlan(plan.id)}
         />
+      ))}
+      {people.map((person) => (
+        <PersonMarker key={person.id} person={person} onPress={() => onSelectPerson(person.id)} />
       ))}
     </MapView>
   );

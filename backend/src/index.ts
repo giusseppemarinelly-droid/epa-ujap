@@ -10,6 +10,7 @@ import { connectionsRouter } from './modules/connections/connections.routes';
 import { conversationsRouter } from './modules/conversations/conversations.routes';
 import { groupsRouter } from './modules/groups/groups.routes';
 import { interestsRouter } from './modules/interests/interests.routes';
+import { locationRouter } from './modules/location/location.routes';
 import { plansRouter } from './modules/plans/plans.routes';
 import { usersRouter } from './modules/users/users.routes';
 
@@ -29,6 +30,7 @@ app.use('/plans', plansRouter);
 app.use('/groups', groupsRouter);
 app.use('/conversations', conversationsRouter);
 app.use('/users', usersRouter);
+app.use('/location', locationRouter);
 app.use('/connections', connectionsRouter);
 
 // Sirve el build web de la app (PWA para "Agregar a inicio" en iOS) desde

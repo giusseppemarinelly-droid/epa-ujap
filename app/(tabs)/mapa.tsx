@@ -7,9 +7,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { MapCanvas } from '@/src/components/mapa/MapCanvas';
 import { PlanDetailCard } from '@/src/components/mapa/PlanDetailCard';
-import { Avatar } from '@/src/components/ui';
-import { useAuthStore, useConnectionsStore, useConversationsStore, usePlansStore } from '@/src/store';
+import { Avatar, Button, Card } from '@/src/components/ui';
+import {
+  useAuthStore,
+  useConnectionsStore,
+  useConversationsStore,
+  useMapPeopleStore,
+  usePlansStore,
+} from '@/src/store';
 import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
+
+// Cadencia del mapa de personas: un minuto es suficiente para que la gente se
+// vea moverse por el campus sin castigar la batería ni el plan de datos.
+const PEOPLE_REFRESH_MS = 60_000;
 
 export default function MapaScreen() {
   const router = useRouter();
@@ -17,7 +27,17 @@ export default function MapaScreen() {
   const fetchPlans = usePlansStore((state) => state.fetchPlans);
   const currentUser = useAuthStore((state) => state.currentUser);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [openingChat, setOpeningChat] = useState(false);
 
+  const people = useMapPeopleStore((state) => state.people);
+  const sharing = useMapPeopleStore((state) => state.sharing);
+  const fetchPeople = useMapPeopleStore((state) => state.fetchPeople);
+  const pushMyLocation = useMapPeopleStore((state) => state.pushMyLocation);
+  const setSharing = useMapPeopleStore((state) => state.setSharing);
+  const hydrateSharing = useMapPeopleStore((state) => state.hydrateSharing);
+
+  const startDirectConversation = useConversationsStore((state) => state.startDirectConversation);
   const incomingCount = useConnectionsStore((state) => state.incoming.length);
   const fetchConnections = useConnectionsStore((state) => state.fetchAll);
   const unreadCount = useConversationsStore((state) =>
@@ -29,6 +49,24 @@ export default function MapaScreen() {
   useEffect(() => {
     fetchPlans();
   }, [fetchPlans]);
+
+  // El interruptor arranca con lo que ya dice el perfil, para que no aparezca
+  // apagado un segundo cuando en realidad estás compartiendo.
+  useEffect(() => {
+    hydrateSharing(currentUser?.shareLocation ?? false);
+  }, [currentUser?.shareLocation, hydrateSharing]);
+
+  useEffect(() => {
+    fetchPeople();
+    pushMyLocation();
+    const interval = setInterval(() => {
+      fetchPeople();
+      // pushMyLocation no hace nada si el interruptor está apagado, así que
+      // el mismo intervalo sirve para los dos casos.
+      pushMyLocation();
+    }, PEOPLE_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [fetchPeople, pushMyLocation]);
 
   useEffect(() => {
     fetchConnections();
@@ -44,10 +82,43 @@ export default function MapaScreen() {
   }, [currentUser?.id, fetchConversations]);
 
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
+  const selectedPerson = people.find((person) => person.id === selectedPersonId);
+
+  function handleSelectPlan(id: string) {
+    setSelectedPersonId(null);
+    setSelectedPlanId(id);
+  }
+
+  function handleSelectPerson(id: string) {
+    setSelectedPlanId(null);
+    setSelectedPersonId(id);
+  }
+
+  async function handleOpenChat() {
+    if (!selectedPerson || !currentUser?.id || openingChat) return;
+    setOpeningChat(true);
+    try {
+      const conversation = await startDirectConversation(selectedPerson.id, currentUser.id);
+      setSelectedPersonId(null);
+      router.push(`/chat/${conversation.id}`);
+    } catch {
+      // Sin red no se abre el chat; la tarjeta se queda como está.
+    } finally {
+      setOpeningChat(false);
+    }
+  }
+
+  const detailVisible = !!selectedPlan || !!selectedPerson;
 
   return (
     <View className="flex-1 bg-surface">
-      <MapCanvas plans={plans} selectedPlanId={selectedPlanId} onSelectPlan={setSelectedPlanId} />
+      <MapCanvas
+        plans={plans}
+        people={people}
+        selectedPlanId={selectedPlanId}
+        onSelectPlan={handleSelectPlan}
+        onSelectPerson={handleSelectPerson}
+      />
 
       <SafeAreaView edges={['top']} className="absolute top-0 left-0 right-0 px-margin-mobile pt-2">
         <View
@@ -83,7 +154,70 @@ export default function MapaScreen() {
 
       {selectedPlan && <PlanDetailCard plan={selectedPlan} onClose={() => setSelectedPlanId(null)} />}
 
-      {!selectedPlan && (
+      {selectedPerson && (
+        <Card className="absolute left-5 right-5 bottom-28">
+          <View className="flex-row items-center">
+            <Avatar uri={selectedPerson.photoUrl} size={48} />
+            <View className="ml-3 flex-1">
+              <Text className="text-on-surface" style={{ fontFamily: 'Inter_700Bold', fontSize: 16 }}>
+                {selectedPerson.name}
+              </Text>
+              <Text className="text-on-surface-variant mt-1" style={{ fontSize: 12 }}>
+                {selectedPerson.career || 'Comunidad UJAP'}
+              </Text>
+            </View>
+            <Pressable onPress={() => setSelectedPersonId(null)} className="p-1">
+              <MaterialIcons name="close" size={20} color={colors['on-surface-variant']} />
+            </Pressable>
+          </View>
+
+          <View className="mt-4">
+            <Button label="Échale un epa" onPress={handleOpenChat} disabled={openingChat} />
+          </View>
+        </Card>
+      )}
+
+      {/* Modo fantasma: un toque para aparecer o desaparecer del mapa. Se
+          esconde mientras hay una tarjeta abierta porque ocupan el mismo sitio. */}
+      {!detailVisible && (
+        <Pressable
+          className="absolute left-5 bottom-28 items-center"
+          onPress={() => setSharing(!sharing)}
+        >
+          <View
+            className="items-center justify-center rounded-full"
+            style={[
+              {
+                width: 56,
+                height: 56,
+                backgroundColor: sharing ? colors.primary : colors['surface-container-lowest'],
+                borderWidth: 2,
+                borderColor: sharing ? colors.primary : colors['outline-variant'],
+              },
+              elevation.card,
+            ]}
+          >
+            <MaterialIcons
+              name={sharing ? 'my-location' : 'visibility-off'}
+              size={24}
+              color={sharing ? '#FFFFFF' : colors['on-surface-variant']}
+            />
+          </View>
+          <View
+            className="bg-surface-container-lowest rounded-full px-2 py-1 mt-1"
+            style={elevation.card}
+          >
+            <Text
+              className="text-on-surface"
+              style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10 }}
+            >
+              {sharing ? 'Visible' : 'Invisible'}
+            </Text>
+          </View>
+        </Pressable>
+      )}
+
+      {!detailVisible && (
         <Pressable className="absolute right-5 bottom-28" onPress={() => router.push('/plan/new')}>
           <LinearGradient
             colors={getEpaGradient()}
