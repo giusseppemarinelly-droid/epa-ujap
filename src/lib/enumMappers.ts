@@ -1,4 +1,6 @@
 import type {
+  MapPerson,
+  MessageKind,
   Conversation,
   ConversationType,
   Faculty,
@@ -69,6 +71,16 @@ export const groupCategoryFromBackend: Record<string, GroupCategory> = Object.fr
   Object.entries(groupCategoryToBackend).map(([label, value]) => [value, label as GroupCategory])
 );
 
+export const messageKindToBackend: Record<MessageKind, string> = {
+  texto: 'TEXTO',
+  imagen: 'IMAGEN',
+  video: 'VIDEO',
+};
+
+const messageKindFromBackend: Record<string, MessageKind> = Object.fromEntries(
+  Object.entries(messageKindToBackend).map(([front, back]) => [back, front as MessageKind])
+) as Record<string, MessageKind>;
+
 export type BackendUser = {
   id: string;
   email: string;
@@ -79,8 +91,10 @@ export type BackendUser = {
   semester: number | null;
   bio: string | null;
   photoUrl: string | null;
+  coverUrl?: string | null;
   photos: string[];
   verified: boolean;
+  shareLocation?: boolean;
   isOrganizer: boolean;
   lookingFor: string[];
   online: boolean;
@@ -100,6 +114,8 @@ export function mapUserFromBackend(raw: BackendUser): User {
     semester: raw.semester ?? 1,
     bio: raw.bio ?? '',
     photoUrl: raw.photoUrl ?? undefined,
+    coverUrl: raw.coverUrl ?? undefined,
+    shareLocation: raw.shareLocation ?? false,
     photos: raw.photos.length > 0 ? raw.photos : raw.photoUrl ? [raw.photoUrl] : [],
     verified: raw.verified,
     isOrganizer: raw.isOrganizer,
@@ -193,6 +209,7 @@ export type BackendConversation = {
   type: string;
   title: string | null;
   unreadCount: number;
+  streakCount?: number;
   participants: { userId: string; user: BackendPersonSummary }[];
   lastMessage: { id: string; text: string; sentAt: string; senderId: string } | null;
 };
@@ -214,6 +231,7 @@ export function mapConversationFromBackend(raw: BackendConversation, currentUser
     unreadCount: raw.unreadCount,
     lastMessageText: raw.lastMessage?.text,
     lastMessageAt: raw.lastMessage?.sentAt,
+    streakCount: raw.streakCount ?? 0,
   };
 }
 
@@ -222,6 +240,8 @@ export type BackendMessage = {
   conversationId: string;
   senderId: string;
   text: string;
+  kind?: string;
+  mediaUrl?: string | null;
   sentAt: string;
   sender: BackendPersonSummary;
 };
@@ -232,6 +252,30 @@ export function mapMessageFromBackend(raw: BackendMessage): Message {
     conversationId: raw.conversationId,
     senderId: raw.senderId,
     text: raw.text,
+    kind: raw.kind ? (messageKindFromBackend[raw.kind] ?? 'texto') : 'texto',
+    mediaUrl: raw.mediaUrl ?? undefined,
     sentAt: raw.sentAt,
+  };
+}
+
+export type BackendMapPerson = {
+  id: string;
+  name: string;
+  photoUrl: string | null;
+  career: string | null;
+  lastLat: number;
+  lastLng: number;
+  locationUpdatedAt: string;
+};
+
+export function mapMapPersonFromBackend(raw: BackendMapPerson): MapPerson {
+  return {
+    id: raw.id,
+    name: raw.name,
+    photoUrl: raw.photoUrl ?? undefined,
+    career: raw.career ?? '',
+    lat: raw.lastLat,
+    lng: raw.lastLng,
+    updatedAt: raw.locationUpdatedAt,
   };
 }

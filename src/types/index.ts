@@ -21,8 +21,11 @@ export type User = {
   semester: number;
   bio: string;
   photoUrl?: string;
+  coverUrl?: string;
   photos: string[];
   verified: boolean;
+  /** Si aparece o no en el mapa de personas. Apagado por defecto. */
+  shareLocation: boolean;
   isOrganizer: boolean;
   interestIds: string[];
   lookingFor: LookingFor[];
@@ -91,12 +94,29 @@ export type Conversation = {
   unreadCount: number;
   lastMessageText?: string;
   lastMessageAt?: string;
+  /** Días seguidos intercambiando fotos. Solo aplica a chats directos. */
+  streakCount: number;
 };
+
+export type MessageKind = 'texto' | 'imagen' | 'video';
 
 export type Message = {
   id: string;
   conversationId: string;
   senderId: string;
   text: string;
+  kind: MessageKind;
+  mediaUrl?: string;
   sentAt: string;
+};
+
+/** Una persona visible en el mapa. Solo existe para quien activó la ubicación. */
+export type MapPerson = {
+  id: string;
+  name: string;
+  photoUrl?: string;
+  career: string;
+  lat: number;
+  lng: number;
+  updatedAt: string;
 };

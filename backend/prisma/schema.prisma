@@ -68,6 +68,12 @@ enum ConnectionStatus {
   RECHAZADA
 }
 
+enum MessageKind {
+  TEXTO
+  IMAGEN
+  VIDEO
+}
+
 model User {
   id                String       @id @default(cuid())
   email             String       @unique
@@ -86,6 +92,12 @@ model User {
   role              Role         @default(STUDENT)
   lookingFor        LookingFor[]
   lastSeenAt        DateTime?
+  coverUrl          String?
+  // Ubicación para el mapa de personas. Opt-in: por defecto nadie aparece.
+  shareLocation     Boolean      @default(false)
+  lastLat           Float?
+  lastLng           Float?
+  locationUpdatedAt DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -190,6 +202,9 @@ model Conversation {
   title   String?
   planId  String?          @unique
   groupId String?          @unique
+  // Racha de fotos/videos entre las dos personas de un chat directo.
+  streakCount Int      @default(0)
+  streakDate  DateTime?
 
   plan         Plan?                     @relation(fields: [planId], references: [id], onDelete: Cascade)
   group        Group?                    @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -203,6 +218,7 @@ model ConversationParticipant {
   conversationId String
   userId         String
   unreadCount    Int    @default(0)
+  lastMediaAt    DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -216,6 +232,8 @@ model Message {
   conversationId String
   senderId       String
   text           String
+  kind           MessageKind @default(TEXTO)
+  mediaUrl       String?
   sentAt         DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
