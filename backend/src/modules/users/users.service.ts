@@ -34,10 +34,34 @@ async function buildAcceptedConnectionGraph(userIds: string[]) {
   return partnersOf;
 }
 
+// Ids de todas las personas con las que ya existe una fila en Connection, en
+// cualquier dirección y con cualquier estado. Descubrir solo tiene sentido
+// para gente con la que todavía no hay nada: ACEPTADA ya son contactos,
+// PENDIENTE ya hay una solicitud en camino (mía o suya) y RECHAZADA es
+// alguien que ya dijo que no, así que insistir sobra.
+async function findAlreadyRelatedUserIds(userId: string) {
+  const connections = await prisma.connection.findMany({
+    where: { OR: [{ requesterId: userId }, { receiverId: userId }] },
+    select: { requesterId: true, receiverId: true },
+  });
+
+  // El propio usuario entra en el set para excluirlo con el mismo notIn.
+  const relatedIds = new Set<string>([userId]);
+  for (const connection of connections) {
+    relatedIds.add(connection.requesterId);
+    relatedIds.add(connection.receiverId);
+  }
+  return relatedIds;
+}
+
 export async function listDiscoverable(filters: DiscoverFilters) {
+  // Una sola consulta previa en vez de comprobar la relación candidato a
+  // candidato, que sería N+1 contra la tabla de conexiones.
+  const relatedIds = await findAlreadyRelatedUserIds(filters.excludeUserId);
+
   const users = await prisma.user.findMany({
     where: {
-      id: { not: filters.excludeUserId },
+      id: { notIn: [...relatedIds] },
       verified: true,
       ...(filters.faculty ? { faculty: filters.faculty } : {}),
       ...(filters.semester ? { semester: filters.semester } : {}),
@@ -48,6 +72,9 @@ export async function listDiscoverable(filters: DiscoverFilters) {
     orderBy: { createdAt: 'desc' },
   });
 
+  // El grafo se arma con el propio usuario incluido a propósito: mis
+  // contactos ya no aparecen en `users`, pero siguen haciendo falta como
+  // aristas para saber cuáles de ellos comparto con cada candidato.
   const partnersOf = await buildAcceptedConnectionGraph([filters.excludeUserId, ...users.map((u) => u.id)]);
   const myPartners = partnersOf.get(filters.excludeUserId) ?? new Set<string>();
 

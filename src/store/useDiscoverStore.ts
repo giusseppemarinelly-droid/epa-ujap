@@ -38,11 +38,15 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
     try {
       const raw = await apiRequest<BackendUser[]>('/users');
       const users = raw.map(mapUserFromBackend);
-      set({
-        usersById: Object.fromEntries(users.map((user) => [user.id, user])),
+      set((state) => ({
+        // Se mezcla en vez de reemplazar, y el `history` se conserva: el
+        // backend ya no devuelve a quien acabas de conectar, así que si se
+        // botaran sus datos, "deshacer" pondría en la cola un id sin usuario
+        // que la pantalla descartaría en silencio.
+        usersById: { ...state.usersById, ...Object.fromEntries(users.map((user) => [user.id, user])) },
         queue: users.map((user) => user.id),
         loading: false,
-      });
+      }));
     } catch {
       set({ loading: false });
     }
@@ -75,7 +79,10 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
       const last = state.history[state.history.length - 1];
       if (!last) return state;
       return {
-        queue: [last.userId, ...state.queue],
+        // Los descartados no se persisten, así que un refetch pudo haberlo
+        // devuelto a la cola; se limpia antes de ponerlo al frente para no
+        // dejarlo duplicado.
+        queue: [last.userId, ...state.queue.filter((id) => id !== last.userId)],
         history: state.history.slice(0, -1),
       };
     }),
