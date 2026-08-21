@@ -99,10 +99,26 @@ export async function uploadPhotoHandler(req: Request, res: Response) {
   res.json(sanitizeUser(user));
 }
 
+export async function uploadCoverHandler(req: Request, res: Response) {
+  const { imageBase64, mimeType } = uploadPhotoSchema.parse(req.body);
+  const user = await authService.uploadCoverPhoto(req.userId!, imageBase64, mimeType);
+  res.json(sanitizeUser(user));
+}
+
 export async function addGalleryPhotoHandler(req: Request, res: Response) {
   const { imageBase64, mimeType } = uploadPhotoSchema.parse(req.body);
   const user = await authService.addGalleryPhoto(req.userId!, imageBase64, mimeType);
   res.status(201).json(sanitizeUser(user));
+}
+
+// El servicio es quien valida que sea el mismo conjunto de fotos; aquí solo
+// se comprueba la forma.
+const reorderPhotosSchema = z.object({ photos: z.array(z.string().url()).max(6) });
+
+export async function reorderPhotosHandler(req: Request, res: Response) {
+  const { photos } = reorderPhotosSchema.parse(req.body);
+  const user = await authService.reorderPhotos(req.userId!, photos);
+  res.json(sanitizeUser(user));
 }
 
 const removeGalleryPhotoSchema = z.object({ photoUrl: z.string().url() });

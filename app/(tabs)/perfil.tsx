@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Avatar, Badge, Button, Card, Chip } from '@/src/components/ui';
+import { Avatar, Badge, Card, Chip } from '@/src/components/ui';
 import { useAuthStore, useGroupsStore, useThemeStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -36,16 +36,57 @@ function ThemeToggle() {
   );
 }
 
+// Portada de respaldo mientras el usuario no suba la suya.
+const FALLBACK_COVER = 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&q=80';
+
+// Botón circular flotante sobre la portada. El fondo translúcido oscuro es lo
+// que hace que el icono se lea encima de cualquier foto que suba el usuario.
+function CoverAction({
+  icon,
+  label,
+  onPress,
+  disabled = false,
+  busy = false,
+}: {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || busy}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className="items-center justify-center rounded-full"
+      style={({ pressed }) => [
+        { width: 36, height: 36, backgroundColor: 'rgba(0,0,0,0.35)' },
+        (pressed || disabled || busy) && { opacity: 0.7 },
+      ]}
+    >
+      {busy ? (
+        <ActivityIndicator size="small" color="#FFFFFF" />
+      ) : (
+        <MaterialIcons name={icon} size={18} color="#FFFFFF" />
+      )}
+    </Pressable>
+  );
+}
+
 export default function PerfilScreen() {
   const router = useRouter();
   const currentUser = useAuthStore((state) => state.currentUser);
   const allInterests = useAuthStore((state) => state.interests);
   const logout = useAuthStore((state) => state.logout);
   const uploadPhoto = useAuthStore((state) => state.uploadPhoto);
+  const uploadCover = useAuthStore((state) => state.uploadCover);
   const groups = useGroupsStore((state) => state.groups);
   const fetchGroups = useGroupsStore((state) => state.fetchGroups);
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => {
     fetchGroups();
@@ -81,6 +122,45 @@ export default function PerfilScreen() {
     }
   }
 
+  async function handleChangeCover() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permiso necesario', 'Epa necesita acceso a tus fotos para cambiar tu portada.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.4,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets[0]?.base64) return;
+
+    const asset = result.assets[0];
+    const mimeType = asset.mimeType ?? 'image/jpeg';
+
+    setUploadingCover(true);
+    try {
+      await uploadCover(asset.base64!, mimeType);
+    } catch (err) {
+      Alert.alert('No se pudo subir la portada', err instanceof Error ? err.message : undefined);
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
+  // El botón es solo un icono, así que sin confirmación un roce cerraría la
+  // sesión sin querer.
+  function handleLogout() {
+    Alert.alert('Cerrar sesión', '¿Seguro que quieres salir de tu cuenta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar sesión', style: 'destructive', onPress: () => void logout() },
+    ]);
+  }
+
   if (!currentUser) {
     return null;
   }
@@ -93,15 +173,30 @@ export default function PerfilScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         <View style={{ height: 200 }} className="bg-ujap-navy">
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&q=80' }}
+            source={{ uri: currentUser.coverUrl ?? FALLBACK_COVER }}
             style={{ width: '100%', height: '100%' }}
             resizeMode="cover"
           />
-          <View
-            className="absolute top-3 right-4 items-center justify-center rounded-full"
-            style={{ width: 36, height: 36, backgroundColor: 'rgba(0,0,0,0.3)' }}
-          >
-            <MaterialIcons name="notifications" size={18} color="#FFFFFF" />
+
+          {/* Las acciones del perfil viven aquí arriba, no al final de la
+              pantalla: se llega a ellas sin recorrer estadísticas y grupos. */}
+          <View className="absolute top-3 right-4 flex-row gap-2">
+            <CoverAction
+              icon="notifications"
+              label="Notificaciones"
+              onPress={() => router.push('/notificaciones')}
+            />
+            <CoverAction icon="tune" label="Editar perfil" onPress={() => router.push('/profile/edit')} />
+            <CoverAction icon="logout" label="Cerrar sesión" onPress={handleLogout} />
+          </View>
+
+          <View className="absolute bottom-3 left-4">
+            <CoverAction
+              icon="photo-camera"
+              label="Cambiar portada"
+              onPress={handleChangeCover}
+              busy={uploadingCover}
+            />
           </View>
         </View>
 
@@ -216,11 +311,6 @@ export default function PerfilScreen() {
             Apariencia
           </Text>
           <ThemeToggle />
-        </View>
-
-        <View className="px-margin-mobile mt-4 gap-3">
-          <Button label="Editar perfil" onPress={() => router.push('/profile/edit')} />
-          <Button label="Cerrar sesión" variant="ghost" onPress={logout} />
         </View>
       </ScrollView>
     </SafeAreaView>

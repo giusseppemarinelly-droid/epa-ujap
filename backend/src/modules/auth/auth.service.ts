@@ -106,7 +106,15 @@ const ALLOWED_IMAGE_MIME_TYPES: Record<string, string> = {
 
 const MAX_GALLERY_PHOTOS = 6;
 
-async function uploadImageToStorage(userId: string, imageBase64: string, mimeType: string): Promise<string> {
+// `folder` separa las portadas de los avatares dentro del mismo bucket, para
+// poder distinguirlas después (limpiezas, políticas de acceso) sin duplicar
+// esta subida en otra función.
+async function uploadImageToStorage(
+  userId: string,
+  imageBase64: string,
+  mimeType: string,
+  folder?: string
+): Promise<string> {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new HttpError(500, 'La subida de fotos no está configurada en el servidor');
   }
@@ -116,7 +124,8 @@ async function uploadImageToStorage(userId: string, imageBase64: string, mimeTyp
     throw new HttpError(400, 'Formato de imagen no soportado');
   }
 
-  const path = `${userId}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}.${extension}`;
+  const prefix = folder ? `${folder}/` : '';
+  const path = `${prefix}${userId}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}.${extension}`;
   const buffer = Buffer.from(imageBase64, 'base64');
 
   const uploadResponse = await fetch(`${env.SUPABASE_URL}/storage/v1/object/avatars/${path}`, {
@@ -144,6 +153,18 @@ export async function uploadProfilePhoto(userId: string, imageBase64: string, mi
   return prisma.user.update({
     where: { id: userId },
     data: { photoUrl },
+    include: { interests: { include: { interest: true } } },
+  });
+}
+
+// Portada del perfil. Va al mismo bucket que los avatares pero bajo `covers/`
+// porque su proporción y su uso son otros.
+export async function uploadCoverPhoto(userId: string, imageBase64: string, mimeType: string) {
+  const coverUrl = await uploadImageToStorage(userId, imageBase64, mimeType, 'covers');
+
+  return prisma.user.update({
+    where: { id: userId },
+    data: { coverUrl },
     include: { interests: { include: { interest: true } } },
   });
 }
@@ -183,6 +204,32 @@ export async function removeGalleryPhoto(userId: string, photoUrl: string) {
   return prisma.user.update({
     where: { id: userId },
     data: { photos, photoUrl: photoUrlUpdate },
+    include: { interests: { include: { interest: true } } },
+  });
+}
+
+// Solo reordena: el cuerpo tiene que ser exactamente el mismo conjunto de URLs
+// que ya tiene el usuario. Así este endpoint no sirve para inyectar imágenes
+// ajenas ni para borrar fotos por la puerta de atrás.
+export async function reorderPhotos(userId: string, photos: string[]) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new HttpError(404, 'Usuario no encontrado');
+  }
+
+  const submitted = [...photos].sort();
+  const stored = [...user.photos].sort();
+  const sameSet = submitted.length === stored.length && submitted.every((url, index) => url === stored[index]);
+
+  if (!sameSet) {
+    throw new HttpError(400, 'El orden enviado no coincide con tus fotos');
+  }
+
+  return prisma.user.update({
+    where: { id: userId },
+    // La primera de la galería manda: es la que se ve como avatar en el resto
+    // de la app, así que sigue al reordenamiento.
+    data: { photos, photoUrl: photos[0] ?? user.photoUrl },
     include: { interests: { include: { interest: true } } },
   });
 }

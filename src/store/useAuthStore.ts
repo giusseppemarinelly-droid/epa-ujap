@@ -58,8 +58,10 @@ type AuthState = {
     lookingFor?: LookingFor[];
   }) => Promise<void>;
   uploadPhoto: (imageBase64: string, mimeType: string) => Promise<void>;
+  uploadCover: (imageBase64: string, mimeType: string) => Promise<void>;
   addGalleryPhoto: (imageBase64: string, mimeType: string) => Promise<void>;
   removeGalleryPhoto: (photoUrl: string) => Promise<void>;
+  reorderPhotos: (photos: string[]) => Promise<void>;
   sendHeartbeat: () => Promise<void>;
 };
 
@@ -263,6 +265,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ currentUser: mapUserFromBackend(updated) });
   },
 
+  uploadCover: async (imageBase64, mimeType) => {
+    const updated = await apiRequest<BackendUser>('/auth/me/cover', {
+      method: 'POST',
+      body: { imageBase64, mimeType },
+    });
+    set({ currentUser: mapUserFromBackend(updated) });
+  },
+
   addGalleryPhoto: async (imageBase64, mimeType) => {
     const updated = await apiRequest<BackendUser>('/auth/me/photos', {
       method: 'POST',
@@ -275,6 +285,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const updated = await apiRequest<BackendUser>('/auth/me/photos', {
       method: 'DELETE',
       body: { photoUrl },
+    });
+    set({ currentUser: mapUserFromBackend(updated) });
+  },
+
+  reorderPhotos: async (photos) => {
+    const updated = await apiRequest<BackendUser>('/auth/me/photos/order', {
+      method: 'PATCH',
+      body: { photos },
     });
     set({ currentUser: mapUserFromBackend(updated) });
   },

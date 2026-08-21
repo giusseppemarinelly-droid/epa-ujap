@@ -9,8 +9,10 @@ import {
   meHandler,
   refreshHandler,
   removeGalleryPhotoHandler,
+  reorderPhotosHandler,
   signupHandler,
   updateProfileHandler,
+  uploadCoverHandler,
   uploadPhotoHandler,
   verifyHandler,
 } from './auth.controller';
@@ -25,5 +27,7 @@ authRouter.post('/refresh', requireAuth, asyncHandler(refreshHandler));
 authRouter.post('/heartbeat', requireAuth, asyncHandler(heartbeatHandler));
 authRouter.patch('/me', requireAuth, asyncHandler(updateProfileHandler));
 authRouter.post('/me/photo', requireAuth, asyncHandler(uploadPhotoHandler));
+authRouter.post('/me/cover', requireAuth, asyncHandler(uploadCoverHandler));
 authRouter.post('/me/photos', requireAuth, asyncHandler(addGalleryPhotoHandler));
+authRouter.patch('/me/photos/order', requireAuth, asyncHandler(reorderPhotosHandler));
 authRouter.delete('/me/photos', requireAuth, asyncHandler(removeGalleryPhotoHandler));
