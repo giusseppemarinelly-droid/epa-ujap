@@ -35,6 +35,13 @@
         {
           "photosPermission": "Epa necesita acceso a tus fotos para que puedas cambiar tu foto de perfil."
         }
+      ],
+      "expo-video",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Epa usa tu ubicacion para mostrarte en el mapa del campus, solo si tu lo activas."
+        }
       ]
     ]
   }
