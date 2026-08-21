@@ -30,12 +30,45 @@ export async function getMessagesHandler(req: Request, res: Response) {
   res.json(messages.map(sanitizeMessage));
 }
 
-const sendMessageSchema = z.object({ text: z.string().min(1).max(2000) });
+// El texto sigue siendo el caso normal, así que `kind` es opcional y cae en
+// TEXTO: los clientes viejos siguen mandando solo `text` y funcionan igual.
+const sendMessageSchema = z
+  .object({
+    kind: z.enum(['TEXTO', 'IMAGEN', 'VIDEO']).default('TEXTO'),
+    text: z.string().max(2000).optional(),
+    mediaBase64: z.string().min(1).optional(),
+    mimeType: z.string().min(1).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.kind === 'TEXTO') {
+      if (!value.text?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['text'], message: 'El mensaje no puede ir vacío' });
+      }
+      if (value.mediaBase64 || value.mimeType) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['mediaBase64'],
+          message: 'Un mensaje de texto no lleva archivo',
+        });
+      }
+      return;
+    }
+
+    // En foto y video el texto es opcional: va como pie de foto.
+    if (!value.mediaBase64) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['mediaBase64'], message: 'Falta el archivo' });
+    }
+    if (!value.mimeType) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['mimeType'], message: 'Falta el tipo de archivo' });
+    }
+  });
 
 export async function sendMessageHandler(req: Request, res: Response) {
-  const { text } = sendMessageSchema.parse(req.body);
-  const message = await conversationsService.sendMessage(req.params.id, req.userId!, text);
-  res.status(201).json(sanitizeMessage(message));
+  const input = sendMessageSchema.parse(req.body);
+  const { message, streakCount } = await conversationsService.sendMessage(req.params.id, req.userId!, input);
+  // La racha viaja pegada al mensaje para que el chat la refresque al instante
+  // en vez de esperar al siguiente refresco de la lista de conversaciones.
+  res.status(201).json({ ...sanitizeMessage(message), streakCount });
 }
 
 export async function markReadHandler(req: Request, res: Response) {

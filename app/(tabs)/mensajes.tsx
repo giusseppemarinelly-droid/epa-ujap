@@ -20,6 +20,7 @@ export default function MensajesScreen() {
   const router = useRouter();
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
   const conversations = useConversationsStore((state) => state.conversations);
+  const lastMessageKinds = useConversationsStore((state) => state.lastMessageKindByConversation);
   const fetchConversations = useConversationsStore((state) => state.fetchConversations);
   const incomingCount = useConnectionsStore((state) => state.incoming.length);
   const fetchConnections = useConnectionsStore((state) => state.fetchAll);
@@ -115,6 +116,7 @@ export default function MensajesScreen() {
             conversation={item}
             lastMessage={item.lastMessageText}
             lastMessageAt={item.lastMessageAt}
+            lastMessageKind={lastMessageKinds[item.id]}
             onPress={() => router.push(`/chat/${item.id}`)}
           />
         )}
