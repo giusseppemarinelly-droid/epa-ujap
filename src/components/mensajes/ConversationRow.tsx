@@ -2,34 +2,51 @@ import { Pressable, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/src/components/ui';
+import type { LastMessageSummary } from '@/src/store/useConversationsStore';
 import { colors } from '@/src/theme/tokens';
 import { formatRelativeTime } from '@/src/utils/formatRelativeTime';
 import type { Conversation, MessageKind } from '@/src/types';
+
+type MediaIcon = 'photo' | 'videocam' | 'photo-camera' | 'visibility-off';
 
 type ConversationRowProps = {
   conversation: Conversation;
   lastMessage?: string;
   lastMessageAt?: string;
-  lastMessageKind?: MessageKind;
+  lastMessageSummary?: LastMessageSummary;
   onPress: () => void;
 };
 
 // Una foto sin pie de foto llega con el texto vacío: sin esto el resumen del
 // chat saldría en blanco y parecería que no pasó nada.
-const MEDIA_SUMMARY: Record<Exclude<MessageKind, 'texto'>, { icon: 'photo' | 'videocam'; label: string }> = {
+const MEDIA_SUMMARY: Record<Exclude<MessageKind, 'texto'>, { icon: MediaIcon; label: string }> = {
   imagen: { icon: 'photo', label: 'Foto' },
   video: { icon: 'videocam', label: 'Video' },
 };
+
+// Un Snap no dice si era foto o video: lo interesante es si queda algo por ver.
+function describeSummary(summary: LastMessageSummary): { icon: MediaIcon; label: string; pending: boolean } | undefined {
+  if (summary.ephemeral) {
+    const pending = !summary.opened && !summary.mine;
+    return {
+      icon: pending ? 'photo-camera' : 'visibility-off',
+      label: summary.opened ? 'Snap abierto' : 'Snap',
+      pending,
+    };
+  }
+  if (summary.kind === 'texto') return undefined;
+  return { ...MEDIA_SUMMARY[summary.kind], pending: false };
+}
 
 export function ConversationRow({
   conversation,
   lastMessage,
   lastMessageAt,
-  lastMessageKind,
+  lastMessageSummary,
   onPress,
 }: ConversationRowProps) {
   const isGroupLike = conversation.type !== 'directa';
-  const media = lastMessageKind && lastMessageKind !== 'texto' ? MEDIA_SUMMARY[lastMessageKind] : undefined;
+  const media = lastMessageSummary ? describeSummary(lastMessageSummary) : undefined;
 
   return (
     <Pressable
@@ -83,13 +100,13 @@ export function ConversationRow({
             <MaterialIcons
               name={media.icon}
               size={14}
-              color={colors['on-surface-variant']}
+              color={media.pending ? colors.primary : colors['on-surface-variant']}
               style={{ marginRight: 4 }}
             />
           )}
           <Text
-            className="text-on-surface-variant flex-1"
-            style={{ fontSize: 13 }}
+            className={media?.pending ? 'text-primary flex-1' : 'text-on-surface-variant flex-1'}
+            style={{ fontSize: 13, fontFamily: media?.pending ? 'Inter_700Bold' : undefined }}
             numberOfLines={1}
           >
             {media

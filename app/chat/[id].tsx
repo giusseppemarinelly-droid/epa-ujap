@@ -14,12 +14,21 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
+import { SnapViewer } from '@/src/components/chat/SnapViewer';
 import { Avatar } from '@/src/components/ui';
 import { useAuthStore, useConversationsStore } from '@/src/store';
-import { colors } from '@/src/theme/tokens';
+import type { OpenedSnap } from '@/src/store/useConversationsStore';
+import { colors, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { Message, MessageKind } from '@/src/types';
 
 // Mismo tope que valida el backend: el body de la API llega a 25mb y base64
@@ -32,6 +41,7 @@ const MAX_VIDEO_SECONDS = 15;
 
 const MEDIA_WIDTH = 220;
 const MEDIA_HEIGHT = 260;
+const SNAP_BOX_SIZE = 150;
 
 // El picker solo trae base64 de las imágenes. Para el video hay que leer el
 // archivo local a mano; blob + FileReader evita meter otra dependencia.
@@ -67,6 +77,101 @@ function VideoBubble({ uri }: { uri: string }) {
   );
 }
 
+type SnapBubbleProps = {
+  message: Message;
+  isMine: boolean;
+  busy: boolean;
+  onOpen: () => void;
+};
+
+/**
+ * Un Snap nunca enseña su contenido en la lista: solo un recuadro con estado.
+ * El que está sin abrir late para que se note que hay algo esperando; los
+ * demás quedan apagados y no responden al toque.
+ */
+function SnapBubble({ message, isMine, busy, onOpen }: SnapBubbleProps) {
+  const isVideo = message.kind === 'video';
+  const mediaLabel = isVideo ? 'Video' : 'Foto';
+  const pending = !isMine && !message.viewedByMe;
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    if (!pending) return;
+    // Late en bucle mientras no lo abran. Al abrirlo el componente deja de
+    // estar en este estado y la animación se corta sola.
+    pulse.value = withRepeat(withTiming(1.05, { duration: 850 }), -1, true);
+    return () => {
+      pulse.value = 1;
+    };
+  }, [pending, pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
+
+  if (pending) {
+    return (
+      <Animated.View className="self-start mb-2" style={pulseStyle}>
+        <Pressable onPress={onOpen} disabled={busy} style={{ opacity: busy ? 0.6 : 1 }}>
+          <LinearGradient
+            colors={getEpaGradient()}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: SNAP_BOX_SIZE,
+              height: SNAP_BOX_SIZE,
+              borderRadius: radii.md,
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 12,
+            }}
+          >
+            <MaterialIcons name={isVideo ? 'videocam' : 'photo-camera'} size={34} color="#FFFFFF" />
+            <Text style={{ color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 15, marginTop: 10 }}>
+              Toca para ver
+            </Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 12, opacity: 0.85, marginTop: 2 }}>{mediaLabel}</Text>
+          </LinearGradient>
+        </Pressable>
+      </Animated.View>
+    );
+  }
+
+  // Enviada y todavía sin abrir por el otro lado; en cualquier otro caso ya se
+  // consumió y no hay vuelta atrás para nadie, tampoco para quien la mandó.
+  const status = isMine && !message.openedByOthers ? 'Enviada' : 'Abierta';
+
+  return (
+    <View
+      className={isMine ? 'self-end mb-2' : 'self-start mb-2'}
+      style={{
+        width: SNAP_BOX_SIZE,
+        height: SNAP_BOX_SIZE,
+        borderRadius: radii.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 12,
+        backgroundColor: colors['surface-container'],
+        borderWidth: 1,
+        borderColor: colors['outline-variant'],
+      }}
+    >
+      <MaterialIcons
+        name={isVideo ? 'videocam-off' : 'visibility-off'}
+        size={30}
+        color={colors['on-surface-variant']}
+      />
+      <Text
+        className="text-on-surface-variant"
+        style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, marginTop: 10 }}
+      >
+        {status}
+      </Text>
+      <Text className="text-on-surface-variant" style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>
+        {mediaLabel}
+      </Text>
+    </View>
+  );
+}
+
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -77,6 +182,7 @@ export default function ChatScreen() {
   const fetchConversations = useConversationsStore((state) => state.fetchConversations);
   const sendMessage = useConversationsStore((state) => state.sendMessage);
   const sendMediaMessage = useConversationsStore((state) => state.sendMediaMessage);
+  const openSnap = useConversationsStore((state) => state.openSnap);
   const markRead = useConversationsStore((state) => state.markRead);
 
   const [text, setText] = useState('');
@@ -84,11 +190,13 @@ export default function ChatScreen() {
   const [uploadingKind, setUploadingKind] = useState<Exclude<MessageKind, 'texto'> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [zoomedPhoto, setZoomedPhoto] = useState<string | null>(null);
+  const [openingSnapId, setOpeningSnapId] = useState<string | null>(null);
+  const [viewingSnap, setViewingSnap] = useState<OpenedSnap | null>(null);
   const listRef = useRef<FlatList<Message>>(null);
 
   const conversation = conversations.find((item) => item.id === id);
   const messages = messagesByConversation[id ?? ''] ?? [];
-  const busy = sending || uploadingKind !== null;
+  const busy = sending || uploadingKind !== null || openingSnapId !== null;
 
   useEffect(() => {
     if (!id || !currentUserId) return;
@@ -124,26 +232,10 @@ export default function ChatScreen() {
     }
   }
 
-  async function handleAttach() {
-    // Una subida a la vez: dos videos en paralelo tumban la conexión y dejan
-    // el indicador mintiendo sobre cuál va.
-    if (busy || !id) return;
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setError('Epa necesita acceso a tus fotos para poder mandarlas');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
-      quality: 0.4,
-      videoMaxDuration: MAX_VIDEO_SECONDS,
-      base64: true,
-    });
-
-    const asset = result.canceled ? undefined : result.assets[0];
-    if (!asset) return;
+  // Todo lo que sale de la cámara es un Snap; lo que sale de la galería se
+  // queda en el chat. Es la única diferencia entre los dos botones.
+  async function uploadAsset(asset: ImagePicker.ImagePickerAsset, ephemeral: boolean) {
+    if (!id) return;
 
     const kind: Exclude<MessageKind, 'texto'> = asset.type === 'video' ? 'video' : 'imagen';
     const isVideo = kind === 'video';
@@ -163,6 +255,7 @@ export default function ChatScreen() {
         mimeType: asset.mimeType ?? (isVideo ? 'video/mp4' : 'image/jpeg'),
         // Lo que haya escrito antes de adjuntar viaja como pie de foto.
         text: text.trim() || undefined,
+        ephemeral,
       });
       setText('');
       scrollToEnd();
@@ -173,9 +266,89 @@ export default function ChatScreen() {
     }
   }
 
+  async function handleCapture() {
+    // Una subida a la vez: dos videos en paralelo tumban la conexión y dejan
+    // el indicador mintiendo sobre cuál va.
+    if (busy || !id) return;
+
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setError('Epa necesita la cámara para mandar un Snap');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images', 'videos'],
+      quality: 0.4,
+      videoMaxDuration: MAX_VIDEO_SECONDS,
+      base64: true,
+    });
+
+    const asset = result.canceled ? undefined : result.assets[0];
+    if (!asset) return;
+    await uploadAsset(asset, true);
+  }
+
+  async function handleAttach() {
+    if (busy || !id) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError('Epa necesita acceso a tus fotos para poder mandarlas');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      quality: 0.4,
+      videoMaxDuration: MAX_VIDEO_SECONDS,
+      base64: true,
+    });
+
+    const asset = result.canceled ? undefined : result.assets[0];
+    if (!asset) return;
+    await uploadAsset(asset, false);
+  }
+
+  async function handleOpenSnap(message: Message) {
+    if (!id || openingSnapId !== null) return;
+    setOpeningSnapId(message.id);
+    setError(null);
+    try {
+      // El store ya deja la burbuja apagada al volver, así que el refresco de
+      // los 3s no la puede resucitar mientras el visor está abierto.
+      setViewingSnap(await openSnap(id, message.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ese Snap ya no está disponible');
+    } finally {
+      setOpeningSnapId(null);
+    }
+  }
+
   function renderBubble(item: Message) {
     const isMine = item.senderId === currentUserId;
     const caption = item.text.trim();
+
+    if (item.ephemeral && item.kind !== 'texto') {
+      return (
+        <View className={isMine ? 'self-end' : 'self-start'} style={{ maxWidth: '80%' }}>
+          <SnapBubble
+            message={item}
+            isMine={isMine}
+            busy={openingSnapId !== null}
+            onOpen={() => handleOpenSnap(item)}
+          />
+          {caption.length > 0 && (
+            <Text
+              className={`text-on-surface-variant mb-2 ${isMine ? 'text-right' : ''}`}
+              style={{ fontSize: 13 }}
+            >
+              {caption}
+            </Text>
+          )}
+        </View>
+      );
+    }
 
     if (item.kind !== 'texto' && item.mediaUrl) {
       const mediaUrl = item.mediaUrl;
@@ -290,6 +463,16 @@ export default function ChatScreen() {
           </Text>
         )}
         <View className="flex-row items-center px-margin-mobile py-3 gap-2">
+          <Pressable onPress={handleCapture} disabled={busy} style={{ opacity: busy ? 0.5 : 1 }}>
+            <LinearGradient
+              colors={getEpaGradient()}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ width: 44, height: 44, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <MaterialIcons name="photo-camera" size={20} color="#FFFFFF" />
+            </LinearGradient>
+          </Pressable>
           <Pressable
             onPress={handleAttach}
             disabled={busy}
@@ -301,7 +484,7 @@ export default function ChatScreen() {
               opacity: busy ? 0.5 : 1,
             }}
           >
-            <MaterialIcons name="add-photo-alternate" size={20} color={colors['on-surface']} />
+            <MaterialIcons name="photo-library" size={20} color={colors['on-surface']} />
           </Pressable>
           <TextInput
             value={text}
@@ -322,6 +505,14 @@ export default function ChatScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      {viewingSnap && (
+        <SnapViewer
+          mediaUrl={viewingSnap.mediaUrl}
+          kind={viewingSnap.kind}
+          onClose={() => setViewingSnap(null)}
+        />
+      )}
 
       <Modal visible={zoomedPhoto !== null} transparent animationType="fade" onRequestClose={() => setZoomedPhoto(null)}>
         <Pressable
