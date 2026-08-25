@@ -33,7 +33,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Epa necesita acceso a tus fotos para que puedas cambiar tu foto de perfil."
+          "photosPermission": "Epa necesita acceso a tus fotos para que puedas cambiar tu foto de perfil.",
+          "cameraPermission": "Epa usa la camara para que puedas mandar Snaps en tus chats."
         }
       ],
       "expo-video",

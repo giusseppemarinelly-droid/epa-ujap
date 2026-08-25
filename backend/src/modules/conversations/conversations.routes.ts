@@ -7,6 +7,7 @@ import {
   getMessagesHandler,
   listConversationsHandler,
   markReadHandler,
+  openSnapHandler,
   sendMessageHandler,
   startDirectConversationHandler,
 } from './conversations.controller';
@@ -19,4 +20,5 @@ conversationsRouter.post('/direct', asyncHandler(startDirectConversationHandler)
 conversationsRouter.post('/group', asyncHandler(createGroupConversationHandler));
 conversationsRouter.get('/:id/messages', asyncHandler(getMessagesHandler));
 conversationsRouter.post('/:id/messages', asyncHandler(sendMessageHandler));
+conversationsRouter.post('/:id/messages/:messageId/open', asyncHandler(openSnapHandler));
 conversationsRouter.post('/:id/read', asyncHandler(markReadHandler));

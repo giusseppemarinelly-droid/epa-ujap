@@ -107,6 +107,12 @@ export type Message = {
   text: string;
   kind: MessageKind;
   mediaUrl?: string;
+  /** Un Snap: se ve una vez y se destruye. */
+  ephemeral: boolean;
+  /** Si yo ya lo abrí (solo aplica a Snaps que recibí). */
+  viewedByMe: boolean;
+  /** Si el destinatario ya lo abrió (para el estado del que lo envió). */
+  openedByOthers: boolean;
   sentAt: string;
 };
 

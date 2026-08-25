@@ -107,6 +107,7 @@ model User {
   createdGroups       Group[]                   @relation("GroupCreator")
   groupMemberships    GroupMember[]
   sentMessages        Message[]
+  messageViews        MessageView[]
   conversations       ConversationParticipant[]
   sentConnections     Connection[]              @relation("ConnectionRequester")
   receivedConnections Connection[]              @relation("ConnectionReceiver")
@@ -234,12 +235,29 @@ model Message {
   text           String
   kind           MessageKind @default(TEXTO)
   mediaUrl       String?
+  // Un Snap: se ve una vez y se destruye. Las fotos de galería son false.
+  ephemeral      Boolean     @default(false)
   sentAt         DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  views        MessageView[]
 
   @@map("messages")
+}
+
+// Quién ya abrió cada Snap. Es una tabla y no un campo en Message porque en
+// un chat grupal cada participante lo abre por su cuenta.
+model MessageView {
+  messageId String
+  userId    String
+  viewedAt  DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@map("message_views")
 }
 
 model Connection {

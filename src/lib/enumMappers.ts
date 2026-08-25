@@ -242,6 +242,9 @@ export type BackendMessage = {
   text: string;
   kind?: string;
   mediaUrl?: string | null;
+  ephemeral?: boolean;
+  viewedByMe?: boolean;
+  openedByOthers?: boolean;
   sentAt: string;
   sender: BackendPersonSummary;
 };
@@ -254,6 +257,9 @@ export function mapMessageFromBackend(raw: BackendMessage): Message {
     text: raw.text,
     kind: raw.kind ? (messageKindFromBackend[raw.kind] ?? 'texto') : 'texto',
     mediaUrl: raw.mediaUrl ?? undefined,
+    ephemeral: raw.ephemeral ?? false,
+    viewedByMe: raw.viewedByMe ?? false,
+    openedByOthers: raw.openedByOthers ?? false,
     sentAt: raw.sentAt,
   };
 }

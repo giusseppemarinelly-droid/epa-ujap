@@ -38,6 +38,8 @@ const sendMessageSchema = z
     text: z.string().max(2000).optional(),
     mediaBase64: z.string().min(1).optional(),
     mimeType: z.string().min(1).optional(),
+    // Solo la cámara manda true. La galería se queda en el chat.
+    ephemeral: z.boolean().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.kind === 'TEXTO') {
@@ -69,6 +71,11 @@ export async function sendMessageHandler(req: Request, res: Response) {
   // La racha viaja pegada al mensaje para que el chat la refresque al instante
   // en vez de esperar al siguiente refresco de la lista de conversaciones.
   res.status(201).json({ ...sanitizeMessage(message), streakCount });
+}
+
+export async function openSnapHandler(req: Request, res: Response) {
+  const result = await conversationsService.openSnap(req.params.id, req.params.messageId, req.userId!);
+  res.json(result);
 }
 
 export async function markReadHandler(req: Request, res: Response) {

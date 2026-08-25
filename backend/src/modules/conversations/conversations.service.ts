@@ -79,11 +79,60 @@ async function assertParticipant(conversationId: string, userId: string) {
 
 export async function getMessages(conversationId: string, userId: string) {
   await assertParticipant(conversationId, userId);
-  return prisma.message.findMany({
+  const messages = await prisma.message.findMany({
     where: { conversationId },
     orderBy: { sentAt: 'asc' },
-    include: { sender: true },
+    include: { sender: true, views: { select: { userId: true } } },
   });
+
+  // La URL de un Snap no viaja en la lista. Si viajara, esconder la foto sería
+  // puro teatro: el cliente ya la tendría descargada y bastaría con mirar la
+  // respuesta. Solo se entrega al abrirlo, y una sola vez.
+  return messages.map(({ views, ...message }) => {
+    const viewedByMe = views.some((view) => view.userId === userId);
+    const openedByOthers = views.some((view) => view.userId !== message.senderId);
+    if (!message.ephemeral) {
+      return { ...message, viewedByMe: false, openedByOthers: false };
+    }
+    return { ...message, mediaUrl: null, viewedByMe, openedByOthers };
+  });
+}
+
+/**
+ * Abre un Snap: lo marca como visto por quien lo abre y devuelve la URL una
+ * única vez. Cuando ya lo vieron todos los destinatarios, el archivo se borra
+ * de Supabase Storage para que la URL deje de servir de verdad.
+ */
+export async function openSnap(conversationId: string, messageId: string, userId: string) {
+  await assertParticipant(conversationId, userId);
+
+  const message = await prisma.message.findFirst({
+    where: { id: messageId, conversationId },
+    include: { views: { select: { userId: true } } },
+  });
+  if (!message) throw new HttpError(404, 'Mensaje no encontrado');
+  if (!message.ephemeral) throw new HttpError(400, 'Ese mensaje no es un Snap');
+  if (!message.mediaUrl) throw new HttpError(410, 'Ese Snap ya no está disponible');
+  if (message.senderId === userId) throw new HttpError(403, 'No puedes volver a ver lo que enviaste');
+  if (message.views.some((view) => view.userId === userId)) {
+    throw new HttpError(410, 'Ya viste ese Snap');
+  }
+
+  const mediaUrl = message.mediaUrl;
+  await prisma.messageView.create({ data: { messageId, userId } });
+
+  // ¿Ya lo vieron todos menos quien lo mandó? Entonces se destruye.
+  const recipients = await prisma.conversationParticipant.count({
+    where: { conversationId, userId: { not: message.senderId } },
+  });
+  const viewers = await prisma.messageView.count({ where: { messageId } });
+
+  if (viewers >= recipients) {
+    await deleteChatMediaFromStorage(mediaUrl);
+    await prisma.message.update({ where: { id: messageId }, data: { mediaUrl: null } });
+  }
+
+  return { mediaUrl, kind: message.kind };
 }
 
 function isStreakExpired(streakDate: Date | null, now: Date) {
@@ -183,11 +232,35 @@ async function uploadChatMediaToStorage(
   return `${env.SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/${path}`;
 }
 
+/** Borra el archivo de Supabase Storage a partir de su URL pública. */
+async function deleteChatMediaFromStorage(publicUrl: string) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return;
+  const marker = `/storage/v1/object/public/${MEDIA_BUCKET}/`;
+  const index = publicUrl.indexOf(marker);
+  if (index === -1) return;
+  const path = publicUrl.slice(index + marker.length);
+
+  try {
+    await fetch(`${env.SUPABASE_URL}/storage/v1/object/${MEDIA_BUCKET}/${path}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    });
+  } catch {
+    // Si el borrado falla el Snap ya quedó inaccesible desde la app igual,
+    // porque mediaUrl se pone en null. No vale la pena tumbar la petición.
+  }
+}
+
 export type SendMessageInput = {
   kind: MessageKind;
   text?: string;
   mediaBase64?: string;
   mimeType?: string;
+  /** Un Snap de cámara: se ve una vez y se destruye. Galería manda false. */
+  ephemeral?: boolean;
 };
 
 // Acepta un string suelto por compatibilidad: connections.service manda el
@@ -228,6 +301,8 @@ export async function sendMessage(
         text: payload.text?.trim() ?? '',
         kind: payload.kind,
         mediaUrl,
+        // Solo la media puede ser efímera; un texto siempre se queda.
+        ephemeral: isMedia && payload.ephemeral === true,
       },
       include: { sender: true },
     });
