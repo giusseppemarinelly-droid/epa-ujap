@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Button, Chip, Input } from '@/src/components/ui';
+import { Button, Chip, ConfirmDialog, Input } from '@/src/components/ui';
 import { useAuthStore } from '@/src/store';
 import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { Faculty, LookingFor } from '@/src/types';
@@ -41,6 +41,7 @@ export default function EditProfileScreen() {
 
   const [photoBusy, setPhotoBusy] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [photoToRemove, setPhotoToRemove] = useState<string | null>(null);
 
   const [name, setName] = useState(currentUser?.name ?? '');
   const [bio, setBio] = useState(currentUser?.bio ?? '');
@@ -118,24 +119,25 @@ export default function EditProfileScreen() {
     }
   }
 
+  // Modal propio en vez de Alert.alert: en la versión web (esta app se sirve
+  // como sitio estático) Alert.alert depende de window.confirm, que varios
+  // navegadores in-app bloquean en silencio y el botón parece no hacer nada.
   function handleRemovePhoto(photoUrl: string) {
-    Alert.alert('Quitar foto', '¿Quitar esta foto de tu perfil?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Quitar',
-        style: 'destructive',
-        onPress: async () => {
-          setPhotoBusy(true);
-          try {
-            await removeGalleryPhoto(photoUrl);
-          } catch (err) {
-            Alert.alert('No se pudo quitar', err instanceof Error ? err.message : undefined);
-          } finally {
-            setPhotoBusy(false);
-          }
-        },
-      },
-    ]);
+    setPhotoToRemove(photoUrl);
+  }
+
+  async function confirmRemovePhoto() {
+    const photoUrl = photoToRemove;
+    if (!photoUrl) return;
+    setPhotoToRemove(null);
+    setPhotoBusy(true);
+    try {
+      await removeGalleryPhoto(photoUrl);
+    } catch (err) {
+      Alert.alert('No se pudo quitar', err instanceof Error ? err.message : undefined);
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   async function handleSubmit() {
@@ -447,6 +449,16 @@ export default function EditProfileScreen() {
           loading={submitting}
         />
       </ScrollView>
+
+      <ConfirmDialog
+        visible={photoToRemove !== null}
+        title="Quitar foto"
+        message="¿Quitar esta foto de tu perfil?"
+        confirmLabel="Quitar"
+        destructive
+        onConfirm={confirmRemovePhoto}
+        onCancel={() => setPhotoToRemove(null)}
+      />
     </SafeAreaView>
   );
 }

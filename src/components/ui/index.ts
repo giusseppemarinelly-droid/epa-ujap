@@ -6,3 +6,4 @@ export { Input } from './Input';
 export { Badge } from './Badge';
 export { BottomNav, type BottomNavItem } from './BottomNav';
 export { EmptyState } from './EmptyState';
+export { ConfirmDialog } from './ConfirmDialog';

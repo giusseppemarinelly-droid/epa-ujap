@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Avatar, Badge, Card, Chip } from '@/src/components/ui';
+import { Avatar, Badge, Card, Chip, ConfirmDialog } from '@/src/components/ui';
 import { useAuthStore, useGroupsStore, useThemeStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -87,6 +87,7 @@ export default function PerfilScreen() {
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [logoutDialogVisible, setLogoutDialogVisible] = useState(false);
 
   useEffect(() => {
     fetchGroups();
@@ -153,12 +154,16 @@ export default function PerfilScreen() {
   }
 
   // El botón es solo un icono, así que sin confirmación un roce cerraría la
-  // sesión sin querer.
+  // sesión sin querer. Se usa un modal propio en vez de Alert.alert: en la
+  // versión web (esta app se sirve como sitio estático) Alert.alert depende
+  // de window.confirm, que varios navegadores in-app bloquean en silencio.
   function handleLogout() {
-    Alert.alert('Cerrar sesión', '¿Seguro que quieres salir de tu cuenta?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Cerrar sesión', style: 'destructive', onPress: () => void logout() },
-    ]);
+    setLogoutDialogVisible(true);
+  }
+
+  function confirmLogout() {
+    setLogoutDialogVisible(false);
+    void logout();
   }
 
   if (!currentUser) {
@@ -313,6 +318,16 @@ export default function PerfilScreen() {
           <ThemeToggle />
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={logoutDialogVisible}
+        title="Cerrar sesión"
+        message="¿Seguro que quieres salir de tu cuenta?"
+        confirmLabel="Cerrar sesión"
+        destructive
+        onConfirm={confirmLogout}
+        onCancel={() => setLogoutDialogVisible(false)}
+      />
     </SafeAreaView>
   );
 }
