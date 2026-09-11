@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar, Badge, Button, Card, ConfirmDialog } from '@/src/components/ui';
 import { apiRequest } from '@/src/lib/api';
 import { mapGroupFromBackend, type BackendGroup } from '@/src/lib/enumMappers';
-import { useAuthStore, useGroupsStore } from '@/src/store';
+import { showAlert, useAuthStore, useGroupsStore } from '@/src/store';
 import { colors, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { Group, GroupCategory } from '@/src/types';
 
@@ -64,7 +64,7 @@ export default function GroupDetailScreen() {
       const raw = await apiRequest<BackendGroup>(`/groups/${group.id}`);
       setGroup(mapGroupFromBackend(raw));
     } catch (err) {
-      Alert.alert('No se pudo actualizar', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo actualizar', err instanceof Error ? err.message : undefined);
     } finally {
       setBusy(false);
     }
@@ -106,6 +106,7 @@ export default function GroupDetailScreen() {
           )}
           <Pressable
             onPress={() => router.back()}
+            accessibilityLabel="Volver"
             className="absolute top-3 left-4 items-center justify-center rounded-full"
             style={{ width: 36, height: 36, backgroundColor: 'rgba(0,0,0,0.3)' }}
           >

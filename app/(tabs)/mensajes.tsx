@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { ConversationRow } from '@/src/components/mensajes/ConversationRow';
 import { EmptyState } from '@/src/components/ui';
-import { useAuthStore, useConnectionsStore, useConversationsStore } from '@/src/store';
+import { useConnectionsStore, useConversationsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 type Tab = 'individual' | 'grupal';
@@ -18,28 +18,14 @@ const TABS: { value: Tab; label: string }[] = [
 
 export default function MensajesScreen() {
   const router = useRouter();
-  const currentUserId = useAuthStore((state) => state.currentUser?.id);
+  // Se leen del store nada más: el polling que los mantiene al día vive en
+  // app/_layout.tsx, compartido por todas las pantallas que los necesitan.
   const conversations = useConversationsStore((state) => state.conversations);
   const lastMessageSummaries = useConversationsStore((state) => state.lastMessageByConversation);
-  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
   const incomingCount = useConnectionsStore((state) => state.incoming.length);
-  const fetchConnections = useConnectionsStore((state) => state.fetchAll);
 
   const [tab, setTab] = useState<Tab>('individual');
   const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    if (!currentUserId) return;
-    fetchConversations(currentUserId);
-    const interval = setInterval(() => fetchConversations(currentUserId), 6000);
-    return () => clearInterval(interval);
-  }, [currentUserId, fetchConversations]);
-
-  useEffect(() => {
-    fetchConnections();
-    const interval = setInterval(fetchConnections, 6000);
-    return () => clearInterval(interval);
-  }, [fetchConnections]);
 
   const filtered = useMemo(() => {
     const byTab = conversations.filter((conversation) =>
@@ -59,6 +45,7 @@ export default function MensajesScreen() {
           className="items-center justify-center rounded-full mr-2"
           style={{ width: 40, height: 40, backgroundColor: colors['surface-container'] }}
           onPress={() => router.push('/connections')}
+          accessibilityLabel="Epas nuevos"
         >
           <MaterialIcons name="waving-hand" size={18} color={colors['on-surface']} />
           {incomingCount > 0 && (
@@ -74,6 +61,7 @@ export default function MensajesScreen() {
           className="items-center justify-center rounded-full"
           style={{ width: 40, height: 40, backgroundColor: colors['ujap-navy'] }}
           onPress={() => router.push('/chat/new')}
+          accessibilityLabel="Nuevo chat"
         >
           <MaterialIcons name="edit" size={18} color="#FFFFFF" />
         </Pressable>

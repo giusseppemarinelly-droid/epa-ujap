@@ -7,6 +7,7 @@ import { env } from '../../config/env';
 import { signToken } from '../../lib/jwt';
 import { sendVerificationEmail } from '../../lib/mailer';
 import { prisma } from '../../lib/prisma';
+import { uploadToStorage } from '../../lib/storage';
 import { HttpError } from '../../middleware/errorHandler';
 
 export function assertInstitutionalEmail(email: string) {
@@ -142,10 +143,6 @@ async function uploadImageToStorage(
   mimeType: string,
   folder?: string
 ): Promise<string> {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new HttpError(500, 'La subida de fotos no está configurada en el servidor');
-  }
-
   const extension = ALLOWED_IMAGE_MIME_TYPES[mimeType];
   if (!extension) {
     throw new HttpError(400, 'Formato de imagen no soportado');
@@ -155,23 +152,7 @@ async function uploadImageToStorage(
   const path = `${prefix}${userId}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}.${extension}`;
   const buffer = Buffer.from(imageBase64, 'base64');
 
-  const uploadResponse = await fetch(`${env.SUPABASE_URL}/storage/v1/object/avatars/${path}`, {
-    method: 'POST',
-    headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-      'Content-Type': mimeType,
-      'x-upsert': 'true',
-    },
-    body: buffer,
-  });
-
-  if (!uploadResponse.ok) {
-    const errorText = await uploadResponse.text();
-    throw new HttpError(502, `No se pudo subir la imagen: ${errorText}`);
-  }
-
-  return `${env.SUPABASE_URL}/storage/v1/object/public/avatars/${path}`;
+  return uploadToStorage('avatars', path, buffer, mimeType);
 }
 
 export async function uploadProfilePhoto(userId: string, imageBase64: string, mimeType: string) {

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Avatar, Badge, Card, Chip, ConfirmDialog } from '@/src/components/ui';
-import { useAuthStore, useGroupsStore, useThemeStore } from '@/src/store';
+import { showAlert, useAuthStore, useGroupsStore, useThemeStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 function ThemeToggle() {
@@ -96,7 +96,7 @@ export default function PerfilScreen() {
   async function handleChangePhoto() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permiso necesario', 'Epa necesita acceso a tus fotos para cambiar tu foto de perfil.');
+      showAlert('Permiso necesario', 'Epa necesita acceso a tus fotos para cambiar tu foto de perfil.');
       return;
     }
 
@@ -117,7 +117,7 @@ export default function PerfilScreen() {
     try {
       await uploadPhoto(asset.base64!, mimeType);
     } catch (err) {
-      Alert.alert('No se pudo subir la foto', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo subir la foto', err instanceof Error ? err.message : undefined);
     } finally {
       setUploadingPhoto(false);
     }
@@ -126,7 +126,7 @@ export default function PerfilScreen() {
   async function handleChangeCover() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permiso necesario', 'Epa necesita acceso a tus fotos para cambiar tu portada.');
+      showAlert('Permiso necesario', 'Epa necesita acceso a tus fotos para cambiar tu portada.');
       return;
     }
 
@@ -147,7 +147,7 @@ export default function PerfilScreen() {
     try {
       await uploadCover(asset.base64!, mimeType);
     } catch (err) {
-      Alert.alert('No se pudo subir la portada', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo subir la portada', err instanceof Error ? err.message : undefined);
     } finally {
       setUploadingCover(false);
     }

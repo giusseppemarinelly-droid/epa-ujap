@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Avatar, Button } from '@/src/components/ui';
 import { apiRequest } from '@/src/lib/api';
 import { mapUserFromBackend, type BackendUser } from '@/src/lib/enumMappers';
-import { useAuthStore, useConversationsStore } from '@/src/store';
+import { showAlert, useAuthStore, useConversationsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { User } from '@/src/types';
 
@@ -27,7 +27,7 @@ export default function NewChatScreen() {
     apiRequest<BackendUser[]>('/users')
       .then((raw) => setPeople(raw.map(mapUserFromBackend)))
       .catch(() => {
-        Alert.alert('No se pudo cargar la lista', 'Revisa tu conexión e intenta de nuevo.');
+        showAlert('No se pudo cargar la lista', 'Revisa tu conexión e intenta de nuevo.');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -49,7 +49,7 @@ export default function NewChatScreen() {
         router.replace(`/chat/${conversation.id}`);
       }
     } catch (err) {
-      Alert.alert('No se pudo iniciar el chat', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo iniciar el chat', err instanceof Error ? err.message : undefined);
     } finally {
       setSubmitting(false);
     }
@@ -58,7 +58,7 @@ export default function NewChatScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center px-margin-mobile py-3">
-        <Pressable onPress={() => router.back()} className="mr-2 p-1">
+        <Pressable onPress={() => router.back()} accessibilityLabel="Volver" className="mr-2 p-1">
           <MaterialIcons name="arrow-back" size={22} color={colors['on-surface']} />
         </Pressable>
         <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_700Bold', fontSize: 18 }}>
@@ -67,7 +67,7 @@ export default function NewChatScreen() {
       </View>
 
       <Text className="text-on-surface-variant px-margin-mobile mb-2" style={{ fontSize: 12 }}>
-        Elige una persona para un chat directo, o varias para armar un grupo.
+        Elige una persona para un chat directo, o varias para armar un chat grupal.
       </Text>
 
       {selected.length > 1 && (
@@ -75,7 +75,7 @@ export default function NewChatScreen() {
           <TextInput
             value={groupTitle}
             onChangeText={setGroupTitle}
-            placeholder="Nombre del grupo"
+            placeholder="Nombre del chat grupal"
             placeholderTextColor={colors['on-surface-variant']}
             className="bg-surface-container rounded-md px-4 py-3 text-on-surface"
             style={{ fontFamily: 'Inter_400Regular', fontSize: 14 }}
@@ -117,7 +117,7 @@ export default function NewChatScreen() {
 
       <View className="px-margin-mobile pb-6">
         <Button
-          label={selected.length > 1 ? 'Crear grupo' : 'Iniciar chat'}
+          label={selected.length > 1 ? 'Crear chat grupal' : 'Iniciar chat'}
           onPress={handleStart}
           disabled={selected.length === 0 || submitting}
           loading={submitting}

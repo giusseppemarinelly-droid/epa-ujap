@@ -13,10 +13,18 @@ import {
   Inter_800ExtraBold,
 } from '@expo-google-fonts/inter';
 
-import { useAuthStore, useThemeStore } from '@/src/store';
+import { GlobalAlert } from '@/src/components/ui';
+import { useAuthStore, useConnectionsStore, useConversationsStore, useThemeStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
+
+// Antes cada pantalla (Mapa, Mensajes, Grupos, Notificaciones) montaba su
+// propio setInterval para esto — y con la navegación por tabs manteniendo
+// pantallas visitadas en memoria, varias terminaban pidiendo lo mismo en
+// paralelo. Un solo poll aquí basta: el estado de los stores es compartido,
+// así que cualquier pantalla que lo lea ya lo ve actualizado.
+const CONNECTIONS_AND_CHATS_POLL_MS = 8000;
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -26,9 +34,12 @@ export default function RootLayout() {
     Inter_800ExtraBold,
   });
   const authStatus = useAuthStore((state) => state.status);
+  const currentUserId = useAuthStore((state) => state.currentUser?.id);
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const loadInterests = useAuthStore((state) => state.loadInterests);
   const sendHeartbeat = useAuthStore((state) => state.sendHeartbeat);
+  const fetchConnections = useConnectionsStore((state) => state.fetchAll);
+  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
   const themeHydrated = useThemeStore((state) => state.hydrated);
   const resolvedScheme = useThemeStore((state) => state.resolvedScheme);
   const hydrateTheme = useThemeStore((state) => state.hydrate);
@@ -45,6 +56,17 @@ export default function RootLayout() {
     const interval = setInterval(sendHeartbeat, 20000);
     return () => clearInterval(interval);
   }, [authStatus, sendHeartbeat]);
+
+  useEffect(() => {
+    if (authStatus !== 'signed-in' || !currentUserId) return;
+    fetchConnections();
+    fetchConversations(currentUserId);
+    const interval = setInterval(() => {
+      fetchConnections();
+      fetchConversations(currentUserId);
+    }, CONNECTIONS_AND_CHATS_POLL_MS);
+    return () => clearInterval(interval);
+  }, [authStatus, currentUserId, fetchConnections, fetchConversations]);
 
   const ready = fontsLoaded && authStatus !== 'checking' && themeHydrated;
 
@@ -72,6 +94,7 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.surface },
         }}
       />
+      <GlobalAlert />
     </GestureHandlerRootView>
   );
 }

@@ -26,6 +26,7 @@ type ConnectionsState = {
   incoming: IncomingRequest[];
   sent: SentRequest[];
   loading: boolean;
+  error: string | null;
   responding: Record<string, boolean>;
   fetchAll: () => Promise<void>;
   respond: (connectionId: string, accept: boolean) => Promise<{ conversationId: string | null }>;
@@ -36,25 +37,43 @@ export const useConnectionsStore = create<ConnectionsState>((set, get) => ({
   incoming: [],
   sent: [],
   loading: false,
+  error: null,
   responding: {},
 
-  reset: () => set({ incoming: [], sent: [], loading: false, responding: {} }),
+  reset: () => set({ incoming: [], sent: [], loading: false, error: null, responding: {} }),
 
   fetchAll: async () => {
-    set({ loading: true });
-    try {
-      const [incomingRaw, sentRaw] = await Promise.all([
-        apiRequest<BackendIncoming[]>('/connections/incoming'),
-        apiRequest<BackendSent[]>('/connections/sent'),
-      ]);
-      set({
-        incoming: incomingRaw.map((r) => ({ id: r.id, createdAt: r.createdAt, requester: mapUserFromBackend(r.requester) })),
-        sent: sentRaw.map((r) => ({ id: r.id, status: r.status, createdAt: r.createdAt, receiver: mapUserFromBackend(r.receiver) })),
-        loading: false,
-      });
-    } catch {
-      set({ loading: false });
-    }
+    set({ loading: true, error: null });
+    // allSettled en vez de Promise.all: si una de las dos peticiones falla,
+    // la otra que sí trajo datos igual se muestra en vez de perderse las dos.
+    const [incomingResult, sentResult] = await Promise.allSettled([
+      apiRequest<BackendIncoming[]>('/connections/incoming'),
+      apiRequest<BackendSent[]>('/connections/sent'),
+    ]);
+
+    set((state) => ({
+      incoming:
+        incomingResult.status === 'fulfilled'
+          ? incomingResult.value.map((r) => ({
+              id: r.id,
+              createdAt: r.createdAt,
+              requester: mapUserFromBackend(r.requester),
+            }))
+          : state.incoming,
+      sent:
+        sentResult.status === 'fulfilled'
+          ? sentResult.value.map((r) => ({
+              id: r.id,
+              status: r.status,
+              createdAt: r.createdAt,
+              receiver: mapUserFromBackend(r.receiver),
+            }))
+          : state.sent,
+      loading: false,
+      error: incomingResult.status === 'rejected' || sentResult.status === 'rejected'
+        ? 'No se pudieron cargar todas las conexiones'
+        : null,
+    }));
   },
 
   respond: async (connectionId, accept) => {

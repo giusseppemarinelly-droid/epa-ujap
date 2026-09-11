@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { MapCanvas } from '@/src/components/mapa/MapCanvas';
 import { PlanDetailCard } from '@/src/components/mapa/PlanDetailCard';
 import { Avatar, Button, Card } from '@/src/components/ui';
 import {
+  showAlert,
   useAuthStore,
   useConnectionsStore,
   useConversationsStore,
@@ -38,12 +39,12 @@ export default function MapaScreen() {
   const hydrateSharing = useMapPeopleStore((state) => state.hydrateSharing);
 
   const startDirectConversation = useConversationsStore((state) => state.startDirectConversation);
+  // Se leen del store nada más: el polling que los mantiene al día vive en
+  // app/_layout.tsx, compartido por todas las pantallas que los necesitan.
   const incomingCount = useConnectionsStore((state) => state.incoming.length);
-  const fetchConnections = useConnectionsStore((state) => state.fetchAll);
   const unreadCount = useConversationsStore((state) =>
     state.conversations.reduce((total, conversation) => total + (conversation.unreadCount > 0 ? 1 : 0), 0)
   );
-  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
   const notificationCount = incomingCount + unreadCount;
 
   useEffect(() => {
@@ -68,19 +69,6 @@ export default function MapaScreen() {
     return () => clearInterval(interval);
   }, [fetchPeople, pushMyLocation]);
 
-  useEffect(() => {
-    fetchConnections();
-    const interval = setInterval(fetchConnections, 8000);
-    return () => clearInterval(interval);
-  }, [fetchConnections]);
-
-  useEffect(() => {
-    if (!currentUser?.id) return;
-    fetchConversations(currentUser.id);
-    const interval = setInterval(() => fetchConversations(currentUser.id!), 8000);
-    return () => clearInterval(interval);
-  }, [currentUser?.id, fetchConversations]);
-
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
   const selectedPerson = people.find((person) => person.id === selectedPersonId);
 
@@ -102,7 +90,7 @@ export default function MapaScreen() {
       setSelectedPersonId(null);
       router.push(`/chat/${conversation.id}`);
     } catch (err) {
-      Alert.alert('No se pudo abrir el chat', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo abrir el chat', err instanceof Error ? err.message : undefined);
     } finally {
       setOpeningChat(false);
     }
@@ -136,6 +124,7 @@ export default function MapaScreen() {
             className="bg-surface-container items-center justify-center rounded-full"
             style={{ width: 40, height: 40 }}
             onPress={() => router.push('/notificaciones')}
+            accessibilityLabel="Notificaciones"
           >
             <MaterialIcons name="notifications" size={20} color={colors['on-surface']} />
             {notificationCount > 0 && (

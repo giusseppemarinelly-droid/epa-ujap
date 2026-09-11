@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Button, Chip, ConfirmDialog, Input } from '@/src/components/ui';
-import { useAuthStore } from '@/src/store';
+import { showAlert, useAuthStore } from '@/src/store';
 import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { Faculty, LookingFor } from '@/src/types';
 
@@ -69,7 +69,7 @@ export default function EditProfileScreen() {
   async function handleAddPhoto() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permiso necesario', 'Epa necesita acceso a tus fotos para agregarlas a tu perfil.');
+      showAlert('Permiso necesario', 'Epa necesita acceso a tus fotos para agregarlas a tu perfil.');
       return;
     }
 
@@ -88,7 +88,7 @@ export default function EditProfileScreen() {
     try {
       await addGalleryPhoto(asset.base64!, asset.mimeType ?? 'image/jpeg');
     } catch (err) {
-      Alert.alert('No se pudo subir la foto', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo subir la foto', err instanceof Error ? err.message : undefined);
     } finally {
       setPhotoBusy(false);
     }
@@ -113,7 +113,7 @@ export default function EditProfileScreen() {
       // La vista previa sigue a la foto movida para que se vea el cambio.
       setPreviewIndex(target);
     } catch (err) {
-      Alert.alert('No se pudo reordenar', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo reordenar', err instanceof Error ? err.message : undefined);
     } finally {
       setPhotoBusy(false);
     }
@@ -134,7 +134,7 @@ export default function EditProfileScreen() {
     try {
       await removeGalleryPhoto(photoUrl);
     } catch (err) {
-      Alert.alert('No se pudo quitar', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo quitar', err instanceof Error ? err.message : undefined);
     } finally {
       setPhotoBusy(false);
     }
@@ -147,7 +147,7 @@ export default function EditProfileScreen() {
       await updateProfile({ name: name.trim(), bio, career, faculty, semester, interestIds, lookingFor });
       router.back();
     } catch (err) {
-      Alert.alert('No se pudo guardar', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo guardar', err instanceof Error ? err.message : undefined);
     } finally {
       setSubmitting(false);
     }

@@ -12,6 +12,7 @@ type DiscoverState = {
   usersById: Record<string, User>;
   queue: string[];
   loading: boolean;
+  error: string | null;
   history: { userId: string; action: DiscoverAction }[];
   /** Id de la Connection creada por cada "conectar", para poder cancelarla al deshacer. */
   sentConnectionIdByUserId: Record<string, string>;
@@ -34,28 +35,41 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
   usersById: {},
   queue: [],
   loading: false,
+  error: null,
   history: [],
   sentConnectionIdByUserId: {},
 
   reset: () =>
-    set({ usersById: {}, queue: [], loading: false, history: [], sentConnectionIdByUserId: {} }),
+    set({
+      usersById: {},
+      queue: [],
+      loading: false,
+      error: null,
+      history: [],
+      sentConnectionIdByUserId: {},
+    }),
 
   fetchCandidates: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const raw = await apiRequest<BackendUser[]>('/users');
       const users = raw.map(mapUserFromBackend);
-      set((state) => ({
+      set((state) => {
         // Se mezcla en vez de reemplazar, y el `history` se conserva: el
         // backend ya no devuelve a quien acabas de conectar, así que si se
         // botaran sus datos, "deshacer" pondría en la cola un id sin usuario
-        // que la pantalla descartaría en silencio.
-        usersById: { ...state.usersById, ...Object.fromEntries(users.map((user) => [user.id, user])) },
-        queue: users.map((user) => user.id),
-        loading: false,
-      }));
+        // que la pantalla descartaría en silencio. Pero solo se conserva a
+        // quien todavía hace falta (cola nueva + historial): sin podar esto,
+        // cada refetch de una sesión larga en Descubrir acumula candidatos
+        // viejos en memoria para siempre.
+        const keepIds = new Set([...users.map((user) => user.id), ...state.history.map((entry) => entry.userId)]);
+        const merged = { ...state.usersById, ...Object.fromEntries(users.map((user) => [user.id, user])) };
+        const usersById = Object.fromEntries(Object.entries(merged).filter(([id]) => keepIds.has(id)));
+
+        return { usersById, queue: users.map((user) => user.id), loading: false };
+      });
     } catch {
-      set({ loading: false });
+      set({ loading: false, error: 'No se pudieron cargar las personas' });
     }
   },
 

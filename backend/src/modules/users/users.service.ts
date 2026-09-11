@@ -1,6 +1,7 @@
 import type { Faculty } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
+import { isOnline } from '../../lib/sanitizeUser';
 
 type DiscoverFilters = {
   excludeUserId: string;
@@ -94,10 +95,12 @@ export async function listDiscoverable(filters: DiscoverFilters) {
     allMutualIds.size > 0
       ? await prisma.user.findMany({
           where: { id: { in: [...allMutualIds] } },
-          select: { id: true, name: true, photoUrl: true },
+          select: { id: true, name: true, photoUrl: true, lastSeenAt: true },
         })
       : [];
-  const mutualUserById = new Map(mutualUsers.map((u) => [u.id, u]));
+  const mutualUserById = new Map(
+    mutualUsers.map(({ lastSeenAt, ...u }) => [u.id, { ...u, online: isOnline(lastSeenAt) }])
+  );
 
   return users.map((user) => ({
     ...user,

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, Chip, Input } from '@/src/components/ui';
 import { LookingForCard } from '@/src/components/onboarding/LookingForCard';
-import { useAuthStore } from '@/src/store';
+import { showAlert, useAuthStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { Faculty, LookingFor } from '@/src/types';
 
@@ -78,7 +78,7 @@ export default function OnboardingScreen() {
     try {
       await startSignup();
     } catch (err) {
-      Alert.alert('No se pudo crear la cuenta', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo crear la cuenta', err instanceof Error ? err.message : undefined);
     } finally {
       setSubmitting(false);
     }
@@ -91,7 +91,7 @@ export default function OnboardingScreen() {
       await confirmSignup(code.trim());
       router.replace('/(tabs)/mapa');
     } catch (err) {
-      Alert.alert('No se pudo verificar el código', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo verificar el código', err instanceof Error ? err.message : undefined);
     } finally {
       setVerifying(false);
     }
@@ -102,9 +102,9 @@ export default function OnboardingScreen() {
     setResending(true);
     try {
       await resendVerification();
-      Alert.alert('Código reenviado', `Revisa ${draft.email}.`);
+      showAlert('Código reenviado', `Revisa ${draft.email}.`);
     } catch (err) {
-      Alert.alert('No se pudo reenviar', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo reenviar', err instanceof Error ? err.message : undefined);
     } finally {
       setResending(false);
     }

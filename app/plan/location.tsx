@@ -123,7 +123,7 @@ export default function LocationPickerScreen() {
           className="flex-row items-center mx-4 mt-2 bg-surface-container-lowest rounded-full px-2"
           style={[elevation.card, { minHeight: 52 }]}
         >
-          <Pressable onPress={() => router.back()} className="p-2">
+          <Pressable onPress={() => router.back()} accessibilityLabel="Volver" className="p-2">
             <MaterialIcons name="arrow-back" size={22} color={colors['on-surface']} />
           </Pressable>
           <TextInput

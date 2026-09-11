@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar, Button, Card } from '@/src/components/ui';
-import { useAuthStore, usePlansStore } from '@/src/store';
+import { showAlert, useAuthStore, usePlansStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { AttendeeStatus, Plan } from '@/src/types';
 
@@ -29,7 +29,7 @@ export function PlanDetailCard({ plan, onClose }: PlanDetailCardProps) {
     try {
       await joinPlan(plan.id, status);
     } catch (err) {
-      Alert.alert('No se pudo apuntar', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo apuntar', err instanceof Error ? err.message : undefined);
     } finally {
       setJoining(null);
     }
@@ -53,7 +53,7 @@ export function PlanDetailCard({ plan, onClose }: PlanDetailCardProps) {
             {plan.location.address}
           </Text>
         </View>
-        <Pressable onPress={onClose} className="p-1">
+        <Pressable onPress={onClose} accessibilityLabel="Cerrar" className="p-1">
           <MaterialIcons name="close" size={20} color={colors['on-surface-variant']} />
         </Pressable>
       </View>

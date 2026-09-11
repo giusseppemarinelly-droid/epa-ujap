@@ -6,6 +6,7 @@ import { colors, elevation } from '@/src/theme/tokens';
 export type BottomNavItem = {
   key: string;
   icon: keyof typeof MaterialIcons.glyphMap;
+  label: string;
   active: boolean;
   onPress: () => void;
 };
@@ -24,6 +25,9 @@ export function BottomNav({ items }: BottomNavProps) {
         <Pressable
           key={item.key}
           onPress={item.onPress}
+          accessibilityRole="tab"
+          accessibilityLabel={item.label}
+          accessibilityState={{ selected: item.active }}
           className="flex-1 items-center justify-center py-1"
         >
           <View

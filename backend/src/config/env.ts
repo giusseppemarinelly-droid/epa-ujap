@@ -15,6 +15,10 @@ const envSchema = z.object({
   GMAIL_USER: z.string().email().optional(),
   GMAIL_APP_PASSWORD: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  // Orígenes extra separados por coma para CORS, además de los de desarrollo
+  // local ya incluidos por defecto (ver index.ts). En producción el front se
+  // sirve desde el mismo origen que la API, así que normalmente no hace falta.
+  ALLOWED_ORIGINS: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

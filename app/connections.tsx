@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar, EmptyState } from '@/src/components/ui';
-import { useConnectionsStore, type IncomingRequest, type SentRequest } from '@/src/store';
+import { showAlert, useConnectionsStore, type IncomingRequest, type SentRequest } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
 type Tab = 'recibidos' | 'enviados';
@@ -27,20 +27,15 @@ const statusColor: Record<SentRequest['status'], string> = {
 // Enviados muestra si la otra persona ya respondió o sigue pendiente.
 export default function ConnectionsScreen() {
   const router = useRouter();
+  // Se leen del store nada más: el polling que los mantiene al día vive en
+  // app/_layout.tsx, compartido por todas las pantallas que los necesitan.
   const incoming = useConnectionsStore((state) => state.incoming);
   const sent = useConnectionsStore((state) => state.sent);
   const loading = useConnectionsStore((state) => state.loading);
   const responding = useConnectionsStore((state) => state.responding);
-  const fetchAll = useConnectionsStore((state) => state.fetchAll);
   const respond = useConnectionsStore((state) => state.respond);
 
   const [tab, setTab] = useState<Tab>('recibidos');
-
-  useEffect(() => {
-    fetchAll();
-    const interval = setInterval(fetchAll, 8000);
-    return () => clearInterval(interval);
-  }, [fetchAll]);
 
   async function handleRespond(request: IncomingRequest, accept: boolean) {
     try {
@@ -49,14 +44,14 @@ export default function ConnectionsScreen() {
         router.push(`/chat/${result.conversationId}`);
       }
     } catch (err) {
-      Alert.alert('No se pudo responder', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo responder', err instanceof Error ? err.message : undefined);
     }
   }
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center px-margin-mobile py-3">
-        <Pressable onPress={() => router.back()} className="mr-2 p-1">
+        <Pressable onPress={() => router.back()} accessibilityLabel="Volver" className="mr-2 p-1">
           <MaterialIcons name="arrow-back" size={22} color={colors['on-surface']} />
         </Pressable>
         <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}>
@@ -102,6 +97,7 @@ export default function ConnectionsScreen() {
               <Pressable
                 onPress={() => handleRespond(item, false)}
                 disabled={responding[item.id]}
+                accessibilityLabel={`Rechazar solicitud de ${item.requester.name}`}
                 className="items-center justify-center rounded-full mr-2"
                 style={{ width: 36, height: 36, backgroundColor: colors['surface-container'] }}
               >
@@ -110,6 +106,7 @@ export default function ConnectionsScreen() {
               <Pressable
                 onPress={() => handleRespond(item, true)}
                 disabled={responding[item.id]}
+                accessibilityLabel={`Aceptar solicitud de ${item.requester.name}`}
                 className="items-center justify-center rounded-full"
                 style={{ width: 36, height: 36, backgroundColor: colors.primary }}
               >

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FeaturedGroupBanner } from '@/src/components/grupos/FeaturedGroupBanner';
 import { GroupCard } from '@/src/components/grupos/GroupCard';
 import { Chip, ConfirmDialog } from '@/src/components/ui';
-import { useAuthStore, useConnectionsStore, useConversationsStore, useGroupsStore } from '@/src/store';
+import { showAlert, useAuthStore, useConnectionsStore, useConversationsStore, useGroupsStore } from '@/src/store';
 import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { GroupCategory } from '@/src/types';
 
@@ -22,12 +22,12 @@ export default function GruposScreen() {
   const leaveGroup = useGroupsStore((state) => state.leaveGroup);
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
 
+  // Se leen del store nada más: el polling que los mantiene al día vive en
+  // app/_layout.tsx, compartido por todas las pantallas que los necesitan.
   const incomingCount = useConnectionsStore((state) => state.incoming.length);
-  const fetchConnections = useConnectionsStore((state) => state.fetchAll);
   const unreadCount = useConversationsStore((state) =>
     state.conversations.reduce((total, conversation) => total + (conversation.unreadCount > 0 ? 1 : 0), 0)
   );
-  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
   const notificationCount = incomingCount + unreadCount;
 
   const [activeCategory, setActiveCategory] = useState<GroupCategory | 'Todos'>('Todos');
@@ -37,19 +37,6 @@ export default function GruposScreen() {
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
-
-  useEffect(() => {
-    fetchConnections();
-    const interval = setInterval(fetchConnections, 8000);
-    return () => clearInterval(interval);
-  }, [fetchConnections]);
-
-  useEffect(() => {
-    if (!currentUserId) return;
-    fetchConversations(currentUserId);
-    const interval = setInterval(() => fetchConversations(currentUserId), 8000);
-    return () => clearInterval(interval);
-  }, [currentUserId, fetchConversations]);
 
   const featuredGroup = groups.find((group) => group.featured);
   const otherGroups = useMemo(
@@ -81,7 +68,7 @@ export default function GruposScreen() {
     try {
       await joinGroup(groupId);
     } catch (err) {
-      Alert.alert('No se pudo unir al grupo', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo unir al grupo', err instanceof Error ? err.message : undefined);
     } finally {
       setBusyGroupId(null);
     }
@@ -95,7 +82,7 @@ export default function GruposScreen() {
     try {
       await leaveGroup(groupId);
     } catch (err) {
-      Alert.alert('No se pudo salir del grupo', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo salir del grupo', err instanceof Error ? err.message : undefined);
     } finally {
       setBusyGroupId(null);
     }
@@ -114,6 +101,7 @@ export default function GruposScreen() {
             className="bg-surface-container items-center justify-center rounded-full"
             style={{ width: 40, height: 40 }}
             onPress={() => router.push('/notificaciones')}
+            accessibilityLabel="Notificaciones"
           >
             <MaterialIcons name="notifications" size={20} color={colors['on-surface']} />
             {notificationCount > 0 && (

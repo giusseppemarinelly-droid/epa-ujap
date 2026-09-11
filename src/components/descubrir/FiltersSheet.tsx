@@ -48,7 +48,7 @@ export function FiltersSheet({ visible, filters, interests: allInterests, onChan
             <Text className="text-on-surface" style={{ fontFamily: 'Inter_700Bold', fontSize: 18 }}>
               Filtros
             </Text>
-            <Pressable onPress={onClose}>
+            <Pressable onPress={onClose} accessibilityLabel="Cerrar filtros">
               <MaterialIcons name="close" size={22} color={colors['on-surface-variant']} />
             </Pressable>
           </View>

@@ -7,3 +7,4 @@ export { useLocationPickerStore } from './useLocationPickerStore';
 export { useMapPeopleStore } from './useMapPeopleStore';
 export { useConnectionsStore, type IncomingRequest, type SentRequest } from './useConnectionsStore';
 export { useThemeStore, type ThemePreference } from './useThemeStore';
+export { useAlertStore, showAlert } from './useAlertStore';

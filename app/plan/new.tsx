@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button, Chip, Input } from '@/src/components/ui';
-import { usePlansStore, useLocationPickerStore } from '@/src/store';
+import { showAlert, usePlansStore, useLocationPickerStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import type { PlanCategory } from '@/src/types';
 
@@ -97,7 +97,7 @@ export default function NewPlanScreen() {
       });
       router.back();
     } catch (err) {
-      Alert.alert('No se pudo armar el plan', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo armar el plan', err instanceof Error ? err.message : undefined);
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +107,7 @@ export default function NewPlanScreen() {
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View className="flex-row items-center mb-6">
-          <Pressable onPress={() => router.back()} className="mr-2">
+          <Pressable onPress={() => router.back()} accessibilityLabel="Volver" className="mr-2">
             <MaterialIcons name="arrow-back" size={22} color={colors['on-surface']} />
           </Pressable>
           <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}>

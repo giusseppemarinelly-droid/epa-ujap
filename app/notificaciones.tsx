@@ -1,12 +1,12 @@
-import { useEffect, useMemo } from 'react';
-import { Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ConversationRow } from '@/src/components/mensajes/ConversationRow';
 import { Avatar, EmptyState } from '@/src/components/ui';
-import { useAuthStore, useConnectionsStore, useConversationsStore } from '@/src/store';
+import { showAlert, useConnectionsStore, useConversationsStore } from '@/src/store';
 import type { IncomingRequest } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 import { formatRelativeTime } from '@/src/utils/formatRelativeTime';
@@ -21,30 +21,16 @@ type NotificationItem =
 // fecha. Es a donde apunta la campanita en las pantallas principales.
 export default function NotificacionesScreen() {
   const router = useRouter();
-  const currentUserId = useAuthStore((state) => state.currentUser?.id);
 
+  // Se leen del store nada más: el polling que los mantiene al día vive en
+  // app/_layout.tsx, compartido por todas las pantallas que los necesitan.
   const incoming = useConnectionsStore((state) => state.incoming);
   const connectionsLoading = useConnectionsStore((state) => state.loading);
   const responding = useConnectionsStore((state) => state.responding);
-  const fetchConnections = useConnectionsStore((state) => state.fetchAll);
   const respond = useConnectionsStore((state) => state.respond);
 
   const conversations = useConversationsStore((state) => state.conversations);
   const conversationsLoading = useConversationsStore((state) => state.loading);
-  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
-
-  useEffect(() => {
-    fetchConnections();
-    const interval = setInterval(fetchConnections, 8000);
-    return () => clearInterval(interval);
-  }, [fetchConnections]);
-
-  useEffect(() => {
-    if (!currentUserId) return;
-    fetchConversations(currentUserId);
-    const interval = setInterval(() => fetchConversations(currentUserId), 8000);
-    return () => clearInterval(interval);
-  }, [currentUserId, fetchConversations]);
 
   const unreadConversations = useMemo(
     () => conversations.filter((conversation) => conversation.unreadCount > 0),
@@ -76,14 +62,14 @@ export default function NotificacionesScreen() {
         router.push(`/chat/${result.conversationId}`);
       }
     } catch (err) {
-      Alert.alert('No se pudo responder', err instanceof Error ? err.message : undefined);
+      showAlert('No se pudo responder', err instanceof Error ? err.message : undefined);
     }
   }
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center px-margin-mobile py-3">
-        <Pressable onPress={() => router.back()} className="mr-2 p-1">
+        <Pressable onPress={() => router.back()} accessibilityLabel="Volver" className="mr-2 p-1">
           <MaterialIcons name="arrow-back" size={22} color={colors['on-surface']} />
         </Pressable>
         <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}>
@@ -110,6 +96,7 @@ export default function NotificacionesScreen() {
               <Pressable
                 onPress={() => handleRespond(item.request, false)}
                 disabled={responding[item.request.id]}
+                accessibilityLabel={`Rechazar solicitud de ${item.request.requester.name}`}
                 className="items-center justify-center rounded-full mr-2"
                 style={{ width: 36, height: 36, backgroundColor: colors['surface-container'] }}
               >
@@ -118,6 +105,7 @@ export default function NotificacionesScreen() {
               <Pressable
                 onPress={() => handleRespond(item.request, true)}
                 disabled={responding[item.request.id]}
+                accessibilityLabel={`Aceptar solicitud de ${item.request.requester.name}`}
                 className="items-center justify-center rounded-full"
                 style={{ width: 36, height: 36, backgroundColor: colors.primary }}
               >

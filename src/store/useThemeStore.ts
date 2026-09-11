@@ -34,6 +34,12 @@ function applyResolvedScheme(scheme: ResolvedScheme) {
   nativewindColorScheme.set(scheme);
 }
 
+// Módulo, no estado del store: hydrate() puede llamarse más de una vez
+// (Strict Mode en dev, Fast Refresh) y sin este flag cada llamada agregaba
+// otro listener, así que un solo cambio de tema del sistema terminaba
+// aplicándose varias veces.
+let appearanceListenerAdded = false;
+
 export const useThemeStore = create<ThemeState>((set, get) => ({
   preference: 'system',
   resolvedScheme: 'light',
@@ -46,12 +52,15 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     applyResolvedScheme(resolvedScheme);
     set({ preference, resolvedScheme, hydrated: true });
 
-    Appearance.addChangeListener(({ colorScheme }) => {
-      if (get().preference !== 'system') return;
-      const nextScheme = colorScheme === 'dark' ? 'dark' : 'light';
-      applyResolvedScheme(nextScheme);
-      set({ resolvedScheme: nextScheme });
-    });
+    if (!appearanceListenerAdded) {
+      appearanceListenerAdded = true;
+      Appearance.addChangeListener(({ colorScheme }) => {
+        if (get().preference !== 'system') return;
+        const nextScheme = colorScheme === 'dark' ? 'dark' : 'light';
+        applyResolvedScheme(nextScheme);
+        set({ resolvedScheme: nextScheme });
+      });
+    }
   },
 
   setThemePreference: async (preference) => {

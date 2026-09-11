@@ -10,6 +10,14 @@ const ICONS: Record<string, keyof typeof MaterialIcons.glyphMap> = {
   perfil: 'person',
 };
 
+const LABELS: Record<string, string> = {
+  mapa: 'Mapa',
+  descubrir: 'Descubrir',
+  grupos: 'Grupos',
+  mensajes: 'Mensajes',
+  perfil: 'Perfil',
+};
+
 // Formas mínimas y estructurales de lo que expone el prop `tabBar` de
 // expo-router Tabs, para no depender de los tipos internos de
 // @react-navigation (no se exponen como paquete propio en esta versión).
@@ -32,6 +40,7 @@ export function CustomTabBar({ state, navigation }: CustomTabBarProps) {
   const items: BottomNavItem[] = state.routes.map((route, index) => ({
     key: route.key,
     icon: ICONS[route.name] ?? 'circle',
+    label: LABELS[route.name] ?? route.name,
     active: state.index === index,
     onPress: () => {
       const isFocused = state.index === index;

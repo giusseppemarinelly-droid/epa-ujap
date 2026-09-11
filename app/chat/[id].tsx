@@ -393,7 +393,7 @@ export default function ChatScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="flex-row items-center px-margin-mobile py-3">
-        <Pressable onPress={() => router.back()} className="mr-2 p-1">
+        <Pressable onPress={() => router.back()} accessibilityLabel="Volver" className="mr-2 p-1">
           <MaterialIcons name="arrow-back" size={22} color={colors['on-surface']} />
         </Pressable>
         <Avatar uri={conversation?.avatarUrl} size={36} online={conversation?.online} />
@@ -463,7 +463,12 @@ export default function ChatScreen() {
           </Text>
         )}
         <View className="flex-row items-center px-margin-mobile py-3 gap-2">
-          <Pressable onPress={handleCapture} disabled={busy} style={{ opacity: busy ? 0.5 : 1 }}>
+          <Pressable
+            onPress={handleCapture}
+            disabled={busy}
+            accessibilityLabel="Mandar un Snap con la cámara"
+            style={{ opacity: busy ? 0.5 : 1 }}
+          >
             <LinearGradient
               colors={getEpaGradient()}
               start={{ x: 0, y: 0 }}
@@ -476,6 +481,7 @@ export default function ChatScreen() {
           <Pressable
             onPress={handleAttach}
             disabled={busy}
+            accessibilityLabel="Adjuntar foto o video de la galería"
             className="items-center justify-center rounded-full"
             style={{
               width: 44,
@@ -498,6 +504,7 @@ export default function ChatScreen() {
           <Pressable
             onPress={handleSend}
             disabled={!text.trim() || busy}
+            accessibilityLabel="Enviar mensaje"
             className="bg-primary items-center justify-center rounded-full"
             style={{ width: 44, height: 44, opacity: !text.trim() || busy ? 0.5 : 1 }}
           >

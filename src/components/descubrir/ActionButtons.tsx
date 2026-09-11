@@ -12,13 +12,23 @@ type CircleButtonProps = {
   iconColor: string;
   onPress: () => void;
   disabled?: boolean;
+  accessibilityLabel: string;
 };
 
-function CircleButton({ icon, size, backgroundColor, iconColor, onPress, disabled }: CircleButtonProps) {
+function CircleButton({
+  icon,
+  size,
+  backgroundColor,
+  iconColor,
+  onPress,
+  disabled,
+  accessibilityLabel,
+}: CircleButtonProps) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
       className="items-center justify-center rounded-full"
       style={({ pressed }) => [
         {
@@ -57,9 +67,11 @@ export function ActionButtons({ userId, canUndo }: ActionButtonsProps) {
         backgroundColor="#FFFFFF"
         iconColor={colors['on-surface']}
         onPress={() => descartar(userId)}
+        accessibilityLabel="Descartar"
       />
       <Pressable
         onPress={() => conectar(userId)}
+        accessibilityLabel="Échale un epa"
         style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.9 : 1 }] })}
       >
         <LinearGradient
@@ -81,6 +93,7 @@ export function ActionButtons({ userId, canUndo }: ActionButtonsProps) {
         iconColor={colors['on-surface-variant']}
         onPress={deshacer}
         disabled={!canUndo}
+        accessibilityLabel="Deshacer"
       />
     </View>
   );

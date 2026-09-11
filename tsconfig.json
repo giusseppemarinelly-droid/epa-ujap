@@ -8,5 +8,11 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
+  // backend/ es un proyecto Node aparte con su propio tsconfig.json y
+  // node_modules (correr `tsc` ahí es lo que lo valida de verdad). Sin este
+  // exclude, este proyecto Expo igual lo recogía por el glob de arriba, pero
+  // typecheckeado con los tipos de React Native/DOM en vez de los de Node
+  // — por ejemplo fetch(body: Buffer) no matchea el BodyInit de ese lib.
+  "exclude": ["backend", "node_modules"]
 }

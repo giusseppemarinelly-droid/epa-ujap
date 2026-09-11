@@ -2,8 +2,8 @@ import crypto from 'node:crypto';
 
 import { MessageKind } from '@prisma/client';
 
-import { env } from '../../config/env';
 import { prisma } from '../../lib/prisma';
+import { deleteFromStorage, uploadToStorage } from '../../lib/storage';
 import { HttpError } from '../../middleware/errorHandler';
 
 // La racha exige que los dos hayan mandado foto o video en las últimas 24h.
@@ -139,7 +139,7 @@ export async function openSnap(conversationId: string, messageId: string, userId
   const viewers = await prisma.messageView.count({ where: { messageId } });
 
   if (viewers >= recipients) {
-    await deleteChatMediaFromStorage(mediaUrl);
+    await deleteFromStorage(MEDIA_BUCKET, mediaUrl);
     await prisma.message.update({ where: { id: messageId }, data: { mediaUrl: null } });
   }
 
@@ -189,21 +189,12 @@ function resolveStreak(
   return { streakCount: base.streakCount + 1, streakDate: now };
 }
 
-/**
- * Copia deliberada de `uploadImageToStorage` de auth.service.ts: la subida a
- * Supabase por REST vive allá y no se puede importar sin tocar ese archivo.
- * Conviene extraerla a `lib/storage.ts` y que ambos módulos la compartan.
- */
 async function uploadChatMediaToStorage(
   conversationId: string,
   mediaBase64: string,
   mimeType: string,
   kind: MessageKind
 ): Promise<string> {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new HttpError(500, 'La subida de archivos no está configurada en el servidor');
-  }
-
   const isVideo = kind === MessageKind.VIDEO;
   const extension = isVideo ? VIDEO_MIME_TYPES[mimeType] : IMAGE_MIME_TYPES[mimeType];
   if (!extension) {
@@ -224,51 +215,7 @@ async function uploadChatMediaToStorage(
   const path = `chat/${conversationId}/${crypto.randomUUID()}.${extension}`;
   const buffer = Buffer.from(mediaBase64, 'base64');
 
-  const uploadResponse = await fetch(`${env.SUPABASE_URL}/storage/v1/object/${MEDIA_BUCKET}/${path}`, {
-    method: 'POST',
-    headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-      'Content-Type': mimeType,
-      'x-upsert': 'true',
-    },
-    body: buffer,
-  });
-
-  if (!uploadResponse.ok) {
-    const errorText = await uploadResponse.text();
-    throw new HttpError(502, `No se pudo subir el archivo: ${errorText}`);
-  }
-
-  return `${env.SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/${path}`;
-}
-
-/** Borra el archivo de Supabase Storage a partir de su URL pública. */
-async function deleteChatMediaFromStorage(publicUrl: string) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return;
-  const marker = `/storage/v1/object/public/${MEDIA_BUCKET}/`;
-  const index = publicUrl.indexOf(marker);
-  if (index === -1) return;
-  const path = publicUrl.slice(index + marker.length);
-
-  // Si el borrado falla el Snap ya queda inaccesible desde la app igual,
-  // porque mediaUrl se pone en null — no vale la pena tumbar la petición por
-  // esto. Pero sin loguearlo, un archivo "destruido" puede seguir público en
-  // el bucket para siempre sin que nadie se entere.
-  try {
-    const response = await fetch(`${env.SUPABASE_URL}/storage/v1/object/${MEDIA_BUCKET}/${path}`, {
-      method: 'DELETE',
-      headers: {
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-    });
-    if (!response.ok) {
-      console.error(`No se pudo borrar el archivo de storage (${response.status}): ${path}`);
-    }
-  } catch (err) {
-    console.error(`No se pudo borrar el archivo de storage: ${path}`, err);
-  }
+  return uploadToStorage(MEDIA_BUCKET, path, buffer, mimeType);
 }
 
 export type SendMessageInput = {
