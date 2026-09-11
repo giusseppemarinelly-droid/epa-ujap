@@ -4,7 +4,7 @@ import cors from 'cors';
 import express from 'express';
 
 import { env } from './config/env';
-import { errorHandler } from './middleware/errorHandler';
+import { errorHandler, HttpError } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
 import { connectionsRouter } from './modules/connections/connections.routes';
 import { conversationsRouter } from './modules/conversations/conversations.routes';
@@ -24,23 +24,29 @@ app.set('trust proxy', 1);
 
 // El bearer token (no cookies) ya evita que un sitio ajeno pueda usar la
 // sesión de alguien vía CORS, pero igual conviene un allowlist explícito en
-// vez de aceptar cualquier origen. Producción sirve front y back del mismo
-// origen (no pasa por aquí); esto cubre desarrollo local y despliegues web
-// futuros en otro dominio.
+// vez de aceptar cualquier origen. Esto cubre desarrollo local y despliegues
+// web futuros en otro dominio.
 const devOrigins = ['http://localhost:8081', 'http://localhost:19006'];
 const extraOrigins = env.ALLOWED_ORIGINS?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? [];
 const allowedOrigins = [...devOrigins, ...extraOrigins];
 
-app.use(
+// El origin se calcula por request (no una lista fija) para poder comparar
+// contra el propio host: los navegadores mandan el header Origin incluso en
+// mismo origen para ciertos recursos (las fuentes @font-face SIEMPRE piden en
+// modo CORS, aunque vengan del mismo sitio) — sin este chequeo, producción
+// (que sirve front y back del mismo origen) se rechazaba a sí misma con 500.
+app.use((req, res, next) => {
+  const requestOrigin = req.headers.origin;
+  const isSameOrigin = requestOrigin === `${req.protocol}://${req.get('host')}`;
   cors({
     origin(origin, callback) {
       // Sin Origin (apps nativas, curl) siempre se permite: CORS es una
       // protección que solo aplica a navegadores.
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error('Origen no permitido'));
+      if (!origin || isSameOrigin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new HttpError(403, 'Origen no permitido'));
     },
-  })
-);
+  })(req, res, next);
+});
 // Límite alto porque las fotos de perfil viajan como base64 en el body
 // (una foto de cámara sin comprimir de más puede superar los 10mb en base64).
 app.use(express.json({ limit: '25mb' }));
