@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Avatar, Badge, Button, Card } from '@/src/components/ui';
+import { Avatar, Badge, Button, Card, ConfirmDialog } from '@/src/components/ui';
 import { apiRequest } from '@/src/lib/api';
 import { mapGroupFromBackend, type BackendGroup } from '@/src/lib/enumMappers';
 import { useAuthStore, useGroupsStore } from '@/src/store';
@@ -30,6 +30,7 @@ export default function GroupDetailScreen() {
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -40,7 +41,18 @@ export default function GroupDetailScreen() {
 
   const isMember = !!currentUserId && !!group?.memberIds.includes(currentUserId);
 
-  async function handleToggleMembership() {
+  // Unirse es inmediato; salir es destructivo, así que primero pide
+  // confirmación en vez de ejecutarse en el mismo toque que "Ya estás dentro".
+  function handleToggleMembership() {
+    if (!group || busy) return;
+    if (isMember) {
+      setConfirmingLeave(true);
+      return;
+    }
+    void runToggle();
+  }
+
+  async function runToggle() {
     if (!group || busy) return;
     setBusy(true);
     try {
@@ -56,6 +68,11 @@ export default function GroupDetailScreen() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function confirmLeave() {
+    setConfirmingLeave(false);
+    void runToggle();
   }
 
   if (loading) {
@@ -146,6 +163,16 @@ export default function GroupDetailScreen() {
           ))}
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={confirmingLeave}
+        title="Salir del grupo"
+        message={`¿Seguro que quieres salir de ${group.name}?`}
+        confirmLabel="Salir"
+        destructive
+        onConfirm={confirmLeave}
+        onCancel={() => setConfirmingLeave(false)}
+      />
     </SafeAreaView>
   );
 }

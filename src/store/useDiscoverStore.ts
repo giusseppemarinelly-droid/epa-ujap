@@ -17,6 +17,7 @@ type DiscoverState = {
   descartar: (userId: string) => void;
   conectar: (userId: string) => void;
   deshacer: () => void;
+  reset: () => void;
 };
 
 function removeFromQueue(action: DiscoverAction) {
@@ -32,6 +33,8 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
   queue: [],
   loading: false,
   history: [],
+
+  reset: () => set({ usersById: {}, queue: [], loading: false, history: [] }),
 
   fetchCandidates: async () => {
     set({ loading: true });

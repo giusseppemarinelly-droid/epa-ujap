@@ -5,6 +5,7 @@ import type { Faculty, LookingFor } from '@prisma/client';
 
 import { env } from '../../config/env';
 import { signToken } from '../../lib/jwt';
+import { sendVerificationEmail } from '../../lib/mailer';
 import { prisma } from '../../lib/prisma';
 import { HttpError } from '../../middleware/errorHandler';
 
@@ -13,6 +14,18 @@ export function assertInstitutionalEmail(email: string) {
   if (domain !== env.ALLOWED_EMAIL_DOMAIN.toLowerCase()) {
     throw new HttpError(400, `El correo debe pertenecer al dominio @${env.ALLOWED_EMAIL_DOMAIN}`);
   }
+}
+
+function generateVerificationCode() {
+  return crypto.randomInt(100000, 1000000).toString();
+}
+
+// Compara en tiempo constante para no filtrar por timing cuánto del código
+// coincide. Con longitudes distintas timingSafeEqual lanza en vez de
+// devolver false, así que ese caso también cuenta como inválido.
+function verificationTokenMatches(stored: string | null, provided: string) {
+  if (!stored || stored.length !== provided.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(provided));
 }
 
 export async function signup(email: string, password: string, name: string) {
@@ -24,18 +37,32 @@ export async function signup(email: string, password: string, name: string) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const verificationToken = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const verificationToken = generateVerificationCode();
+
+  // Se manda antes de crear la cuenta: si el correo falla, no queda un
+  // usuario huérfano que nunca podrá verificarse ni volver a registrarse.
+  await sendVerificationEmail(email, verificationToken);
 
   const user = await prisma.user.create({
     data: { email, passwordHash, name, verificationToken },
   });
 
-  return { userId: user.id, verificationToken };
+  return { userId: user.id };
+}
+
+export async function resendVerification(email: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  // Ni confirma ni niega si la cuenta existe: siempre responde igual.
+  if (!user || user.verified) return;
+
+  const verificationToken = generateVerificationCode();
+  await sendVerificationEmail(email, verificationToken);
+  await prisma.user.update({ where: { id: user.id }, data: { verificationToken } });
 }
 
 export async function verifyEmail(email: string, token: string) {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || user.verificationToken !== token) {
+  if (!user || !verificationTokenMatches(user.verificationToken, token)) {
     throw new HttpError(400, 'Código de verificación inválido');
   }
 

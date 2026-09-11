@@ -14,12 +14,15 @@ type MapPeopleState = {
   fetchPeople: () => Promise<void>;
   pushMyLocation: () => Promise<void>;
   setSharing: (value: boolean) => Promise<void>;
+  reset: () => void;
 };
 
 export const useMapPeopleStore = create<MapPeopleState>((set, get) => ({
   people: [],
   loading: false,
   sharing: false,
+
+  reset: () => set({ people: [], loading: false, sharing: false }),
 
   hydrateSharing: (value) => set({ sharing: value }),
 

@@ -29,6 +29,7 @@ type ConnectionsState = {
   responding: Record<string, boolean>;
   fetchAll: () => Promise<void>;
   respond: (connectionId: string, accept: boolean) => Promise<{ conversationId: string | null }>;
+  reset: () => void;
 };
 
 export const useConnectionsStore = create<ConnectionsState>((set, get) => ({
@@ -36,6 +37,8 @@ export const useConnectionsStore = create<ConnectionsState>((set, get) => ({
   sent: [],
   loading: false,
   responding: {},
+
+  reset: () => set({ incoming: [], sent: [], loading: false, responding: {} }),
 
   fetchAll: async () => {
     set({ loading: true });

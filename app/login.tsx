@@ -50,8 +50,8 @@ export default function LoginScreen() {
         </View>
 
         <Input
-          label="Correo UJAP"
-          placeholder="tu.nombre@ujap.edu.ve"
+          label="Correo"
+          placeholder="tu.nombre@gmail.com"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}

@@ -78,6 +78,7 @@ type ConversationsState = {
     currentUserId: string
   ) => Promise<Conversation>;
   markRead: (conversationId: string) => Promise<void>;
+  reset: () => void;
 };
 
 export const useConversationsStore = create<ConversationsState>((set, get) => ({
@@ -86,6 +87,15 @@ export const useConversationsStore = create<ConversationsState>((set, get) => ({
   lastMessageByConversation: {},
   openedSnapIds: {},
   loading: false,
+
+  reset: () =>
+    set({
+      conversations: [],
+      messagesByConversation: {},
+      lastMessageByConversation: {},
+      openedSnapIds: {},
+      loading: false,
+    }),
 
   fetchConversations: async (currentUserId) => {
     set({ loading: true });

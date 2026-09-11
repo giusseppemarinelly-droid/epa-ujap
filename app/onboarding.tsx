@@ -27,19 +27,29 @@ const lookingForOptions: { value: LookingFor; label: string; icon: keyof typeof 
   { value: 'eventos', label: 'Eventos', icon: 'celebration' },
 ];
 
-const EMAIL_DOMAIN = '@ujap.edu.ve';
+// Temporal: hasta tener envío de correo institucional, la verificación pasa
+// por Gmail. Debe coincidir con ALLOWED_EMAIL_DOMAIN en el backend.
+const EMAIL_DOMAIN = '@gmail.com';
+const CODE_LENGTH = 6;
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const draft = useAuthStore((state) => state.draft);
   const interests = useAuthStore((state) => state.interests);
+  const awaitingVerification = useAuthStore((state) => state.awaitingVerification);
   const setDraftField = useAuthStore((state) => state.setDraftField);
   const toggleInterest = useAuthStore((state) => state.toggleInterest);
   const toggleLookingFor = useAuthStore((state) => state.toggleLookingFor);
-  const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
+  const startSignup = useAuthStore((state) => state.startSignup);
+  const resendVerification = useAuthStore((state) => state.resendVerification);
+  const confirmSignup = useAuthStore((state) => state.confirmSignup);
+  const cancelSignup = useAuthStore((state) => state.cancelSignup);
   const loadInterests = useAuthStore((state) => state.loadInterests);
 
   const [submitting, setSubmitting] = useState(false);
+  const [code, setCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     loadInterests();
@@ -66,13 +76,92 @@ export default function OnboardingScreen() {
     if (!isFormComplete || submitting) return;
     setSubmitting(true);
     try {
-      await completeOnboarding();
-      router.replace('/(tabs)/mapa');
+      await startSignup();
     } catch (err) {
-      Alert.alert('No se pudo completar el registro', err instanceof Error ? err.message : undefined);
+      Alert.alert('No se pudo crear la cuenta', err instanceof Error ? err.message : undefined);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleConfirmCode() {
+    if (code.trim().length === 0 || verifying) return;
+    setVerifying(true);
+    try {
+      await confirmSignup(code.trim());
+      router.replace('/(tabs)/mapa');
+    } catch (err) {
+      Alert.alert('No se pudo verificar el código', err instanceof Error ? err.message : undefined);
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleResend() {
+    if (resending) return;
+    setResending(true);
+    try {
+      await resendVerification();
+      Alert.alert('Código reenviado', `Revisa ${draft.email}.`);
+    } catch (err) {
+      Alert.alert('No se pudo reenviar', err instanceof Error ? err.message : undefined);
+    } finally {
+      setResending(false);
+    }
+  }
+
+  if (awaitingVerification) {
+    return (
+      <SafeAreaView className="flex-1 bg-surface">
+        <View className="flex-1 justify-center px-margin-mobile">
+          <View className="items-center mb-8">
+            <View
+              className="bg-primary-container items-center justify-center rounded-full mb-4"
+              style={{ width: 72, height: 72 }}
+            >
+              <MaterialIcons name="mail-outline" size={36} color={colors['on-primary-container']} />
+            </View>
+            <Text className="text-on-surface text-center" style={{ fontFamily: 'Inter_700Bold', fontSize: 20 }}>
+              Revisa tu correo
+            </Text>
+            <Text className="text-on-surface-variant text-center mt-2">
+              Te mandamos un código de {CODE_LENGTH} dígitos a {draft.email}
+            </Text>
+          </View>
+
+          <Input
+            label="Código de verificación"
+            placeholder="123456"
+            keyboardType="number-pad"
+            maxLength={CODE_LENGTH}
+            value={code}
+            onChangeText={setCode}
+          />
+
+          <Button
+            label={verifying ? 'Verificando...' : 'Confirmar código'}
+            onPress={handleConfirmCode}
+            disabled={code.trim().length === 0 || verifying}
+            loading={verifying}
+          />
+
+          <Text
+            className="text-primary text-center mt-6"
+            style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14 }}
+            onPress={handleResend}
+          >
+            {resending ? 'Reenviando...' : 'Reenviar código'}
+          </Text>
+          <Text
+            className="text-on-surface-variant text-center mt-3"
+            style={{ fontSize: 13 }}
+            onPress={cancelSignup}
+          >
+            Usar otro correo
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -98,7 +187,7 @@ export default function OnboardingScreen() {
 
         <Card className="mb-8">
           <Text className="text-on-surface mb-3" style={{ fontFamily: 'Inter_700Bold', fontSize: 18 }}>
-            Verifica tu correo institucional
+            Verifica tu correo
           </Text>
           <Input
             label="Nombre completo"
@@ -107,8 +196,8 @@ export default function OnboardingScreen() {
             onChangeText={(name) => setDraftField('name', name)}
           />
           <Input
-            label="Correo UJAP"
-            placeholder="tu.nombre@ujap.edu.ve"
+            label="Correo"
+            placeholder="tu.nombre@gmail.com"
             autoCapitalize="none"
             keyboardType="email-address"
             value={draft.email}
@@ -128,7 +217,7 @@ export default function OnboardingScreen() {
               color={isEmailValid ? '#22C55E' : colors['on-surface-variant']}
             />
             <Text className="text-on-surface-variant ml-2" style={{ fontSize: 12 }}>
-              Solo estudiantes y profesores activos con correo @ujap.edu.ve
+              Por ahora, verificamos con tu correo de Gmail
             </Text>
           </View>
         </Card>
@@ -223,7 +312,7 @@ export default function OnboardingScreen() {
         </View>
 
         <Button
-          label={submitting ? 'Creando tu cuenta...' : 'Entrar a Epa'}
+          label={submitting ? 'Enviando código...' : 'Mandar código de verificación'}
           onPress={handleSubmit}
           disabled={!isFormComplete || submitting}
           loading={submitting}

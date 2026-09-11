@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,8 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { FeaturedGroupBanner } from '@/src/components/grupos/FeaturedGroupBanner';
 import { GroupCard } from '@/src/components/grupos/GroupCard';
-import { Chip } from '@/src/components/ui';
-import { useAuthStore, useGroupsStore } from '@/src/store';
+import { Chip, ConfirmDialog } from '@/src/components/ui';
+import { useAuthStore, useConnectionsStore, useConversationsStore, useGroupsStore } from '@/src/store';
 import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { GroupCategory } from '@/src/types';
 
@@ -22,11 +22,34 @@ export default function GruposScreen() {
   const leaveGroup = useGroupsStore((state) => state.leaveGroup);
   const currentUserId = useAuthStore((state) => state.currentUser?.id);
 
+  const incomingCount = useConnectionsStore((state) => state.incoming.length);
+  const fetchConnections = useConnectionsStore((state) => state.fetchAll);
+  const unreadCount = useConversationsStore((state) =>
+    state.conversations.reduce((total, conversation) => total + (conversation.unreadCount > 0 ? 1 : 0), 0)
+  );
+  const fetchConversations = useConversationsStore((state) => state.fetchConversations);
+  const notificationCount = incomingCount + unreadCount;
+
   const [activeCategory, setActiveCategory] = useState<GroupCategory | 'Todos'>('Todos');
+  const [busyGroupId, setBusyGroupId] = useState<string | null>(null);
+  const [leaveTargetId, setLeaveTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
+
+  useEffect(() => {
+    fetchConnections();
+    const interval = setInterval(fetchConnections, 8000);
+    return () => clearInterval(interval);
+  }, [fetchConnections]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    fetchConversations(currentUserId);
+    const interval = setInterval(() => fetchConversations(currentUserId), 8000);
+    return () => clearInterval(interval);
+  }, [currentUserId, fetchConversations]);
 
   const featuredGroup = groups.find((group) => group.featured);
   const otherGroups = useMemo(
@@ -41,13 +64,44 @@ export default function GruposScreen() {
     return !!currentUserId && group.memberIds.includes(currentUserId);
   }
 
+  // Unirse es inmediato; salir es destructivo y solo se dispara desde el
+  // GroupCard/banner (nunca disabled del lado de "ya estás dentro"), así que
+  // necesita su propia confirmación en vez de ejecutarse en el mismo toque.
   function toggleMembership(groupId: string, memberAlready: boolean) {
     if (memberAlready) {
-      leaveGroup(groupId);
+      setLeaveTargetId(groupId);
     } else {
-      joinGroup(groupId);
+      handleJoin(groupId);
     }
   }
+
+  async function handleJoin(groupId: string) {
+    if (busyGroupId) return;
+    setBusyGroupId(groupId);
+    try {
+      await joinGroup(groupId);
+    } catch (err) {
+      Alert.alert('No se pudo unir al grupo', err instanceof Error ? err.message : undefined);
+    } finally {
+      setBusyGroupId(null);
+    }
+  }
+
+  async function confirmLeave() {
+    const groupId = leaveTargetId;
+    if (!groupId) return;
+    setLeaveTargetId(null);
+    setBusyGroupId(groupId);
+    try {
+      await leaveGroup(groupId);
+    } catch (err) {
+      Alert.alert('No se pudo salir del grupo', err instanceof Error ? err.message : undefined);
+    } finally {
+      setBusyGroupId(null);
+    }
+  }
+
+  const leaveTargetName = groups.find((group) => group.id === leaveTargetId)?.name ?? 'este grupo';
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
@@ -56,7 +110,23 @@ export default function GruposScreen() {
           <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}>
             Epa
           </Text>
-          <MaterialIcons name="notifications" size={20} color={colors['on-surface']} />
+          <Pressable
+            className="bg-surface-container items-center justify-center rounded-full"
+            style={{ width: 40, height: 40 }}
+            onPress={() => router.push('/notificaciones')}
+          >
+            <MaterialIcons name="notifications" size={20} color={colors['on-surface']} />
+            {notificationCount > 0 && (
+              <View
+                className="absolute rounded-full items-center justify-center bg-primary"
+                style={{ top: -2, right: -2, minWidth: 16, height: 16, paddingHorizontal: 3 }}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 10, fontFamily: 'Inter_700Bold' }}>
+                  {notificationCount}
+                </Text>
+              </View>
+            )}
+          </Pressable>
         </View>
 
         <Text className="text-on-surface mt-2" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 24 }}>
@@ -129,6 +199,16 @@ export default function GruposScreen() {
           </Pressable>
         </LinearGradient>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={leaveTargetId !== null}
+        title="Salir del grupo"
+        message={`¿Seguro que quieres salir de ${leaveTargetName}?`}
+        confirmLabel="Salir"
+        destructive
+        onConfirm={confirmLeave}
+        onCancel={() => setLeaveTargetId(null)}
+      />
     </SafeAreaView>
   );
 }

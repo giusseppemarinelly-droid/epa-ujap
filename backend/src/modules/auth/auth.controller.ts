@@ -28,6 +28,14 @@ export async function verifyHandler(req: Request, res: Response) {
   res.json({ ok: true });
 }
 
+const resendSchema = z.object({ email: z.string().email() });
+
+export async function resendHandler(req: Request, res: Response) {
+  const { email } = resendSchema.parse(req.body);
+  await authService.resendVerification(email);
+  res.json({ ok: true });
+}
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),

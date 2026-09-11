@@ -68,6 +68,16 @@ export async function createPlan(creatorId: string, data: CreatePlanInput) {
 }
 
 export async function joinPlan(planId: string, userId: string, status: AttendeeStatus = 'VA') {
+  const plan = await prisma.plan.findUnique({ where: { id: planId }, include: { attendees: true } });
+  if (!plan) {
+    throw new HttpError(404, 'Plan no encontrado');
+  }
+
+  const alreadyJoined = plan.attendees.some((attendee) => attendee.userId === userId);
+  if (!alreadyJoined && plan.attendees.length >= plan.capacity) {
+    throw new HttpError(409, 'Este plan ya llegó a su cupo máximo');
+  }
+
   await prisma.planAttendee.upsert({
     where: { planId_userId: { planId, userId } },
     update: { status },

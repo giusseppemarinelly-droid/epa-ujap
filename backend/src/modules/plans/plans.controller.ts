@@ -7,9 +7,26 @@ import * as plansService from './plans.service';
 const categoryEnum = z.enum(['DEPORTES', 'ESTUDIO', 'COMIDA', 'PROYECTOS', 'CULTURA']);
 const statusEnum = z.enum(['VA', 'QUIZAS', 'ASISTIO']);
 
+// El modelo no guarda una hora de fin, así que "en curso"/"finalizado" se
+// derivan de dateTime + una duración asumida, en cada lectura — ningún otro
+// sitio transiciona PlanStatus, así que sin esto un plan se quedaba en
+// PROGRAMADO para siempre.
+const PLAN_DURATION_HOURS = 3;
+
+function derivePlanStatus(dateTime: Date, storedStatus: string): string {
+  if (storedStatus === 'FINALIZADO') return storedStatus;
+  const start = dateTime.getTime();
+  const end = start + PLAN_DURATION_HOURS * 60 * 60 * 1000;
+  const now = Date.now();
+  if (now < start) return 'PROGRAMADO';
+  if (now < end) return 'EN_CURSO';
+  return 'FINALIZADO';
+}
+
 function sanitizePlan(plan: Awaited<ReturnType<typeof plansService.getPlan>>) {
   return {
     ...plan,
+    status: derivePlanStatus(plan.dateTime, plan.status),
     creator: sanitizeUser(plan.creator),
     attendees: plan.attendees.map((attendee) => ({ ...attendee, user: sanitizeUser(attendee.user) })),
   };

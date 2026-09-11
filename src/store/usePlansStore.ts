@@ -23,12 +23,15 @@ type PlansState = {
   joinPlan: (planId: string) => Promise<void>;
   leavePlan: (planId: string) => Promise<void>;
   createPlan: (data: CreatePlanInput) => Promise<Plan>;
+  reset: () => void;
 };
 
 export const usePlansStore = create<PlansState>((set, get) => ({
   plans: [],
   loading: false,
   error: null,
+
+  reset: () => set({ plans: [], loading: false, error: null }),
 
   fetchPlans: async () => {
     set({ loading: true, error: null });

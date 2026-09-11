@@ -18,12 +18,15 @@ type GroupsState = {
   joinGroup: (groupId: string) => Promise<void>;
   leaveGroup: (groupId: string) => Promise<void>;
   createGroup: (data: CreateGroupInput) => Promise<Group>;
+  reset: () => void;
 };
 
 export const useGroupsStore = create<GroupsState>((set, get) => ({
   groups: [],
   loading: false,
   error: null,
+
+  reset: () => set({ groups: [], loading: false, error: null }),
 
   fetchGroups: async () => {
     set({ loading: true, error: null });

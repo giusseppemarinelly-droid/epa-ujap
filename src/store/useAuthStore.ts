@@ -16,6 +16,24 @@ import {
   setToken,
 } from '@/src/lib/secureStorage';
 import type { Faculty, Interest, LookingFor, User } from '@/src/types';
+import { useConnectionsStore } from './useConnectionsStore';
+import { useConversationsStore } from './useConversationsStore';
+import { useDiscoverStore } from './useDiscoverStore';
+import { useGroupsStore } from './useGroupsStore';
+import { useMapPeopleStore } from './useMapPeopleStore';
+import { usePlansStore } from './usePlansStore';
+
+// Cierra sesión (o el token deja de ser válido) y a otro usuario le toca el
+// mismo teléfono: sin esto, cada store de datos del usuario anterior se
+// queda en memoria y el que entra después lo ve por un instante.
+function resetUserScopedStores() {
+  useDiscoverStore.getState().reset();
+  useConnectionsStore.getState().reset();
+  useConversationsStore.getState().reset();
+  useGroupsStore.getState().reset();
+  usePlansStore.getState().reset();
+  useMapPeopleStore.getState().reset();
+}
 
 type OnboardingDraft = {
   name: string;
@@ -37,13 +55,18 @@ type AuthState = {
   draft: OnboardingDraft;
   interests: Interest[];
   error: string | null;
+  /** true entre "mandamos el código" y "el código se confirmó". */
+  awaitingVerification: boolean;
 
   restoreSession: () => Promise<void>;
   loadInterests: () => Promise<void>;
   setDraftField: <K extends keyof OnboardingDraft>(key: K, value: OnboardingDraft[K]) => void;
   toggleInterest: (interestId: string) => void;
   toggleLookingFor: (value: LookingFor) => void;
-  completeOnboarding: () => Promise<void>;
+  startSignup: () => Promise<void>;
+  resendVerification: () => Promise<void>;
+  confirmSignup: (code: string) => Promise<void>;
+  cancelSignup: () => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: {
@@ -100,6 +123,7 @@ function errorMessage(err: unknown, fallback: string) {
 export const useAuthStore = create<AuthState>((set, get) => ({
   status: 'checking',
   currentUser: null,
+  awaitingVerification: false,
   draft: emptyDraft,
   interests: [],
   error: null,
@@ -176,23 +200,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
     }),
 
-  // Encadena signup -> verify (con el token que devuelve la API, ya que no
-  // se envía correo real) -> login -> perfil académico, todo en un solo
-  // paso desde el formulario único de onboarding.
-  completeOnboarding: async () => {
+  // Manda el código al correo y deja la pantalla de onboarding en modo
+  // "espera de código" — ya no hay forma de auto-verificar en el cliente
+  // porque ahora el código sale por un correo real.
+  startSignup: async () => {
+    const draft = get().draft;
+    set({ error: null });
+    try {
+      await apiRequest('/auth/signup', {
+        method: 'POST',
+        auth: false,
+        body: { email: draft.email, password: draft.password, name: draft.name },
+      });
+      set({ awaitingVerification: true });
+    } catch (err) {
+      set({ error: errorMessage(err, 'No se pudo crear la cuenta') });
+      throw err;
+    }
+  },
+
+  resendVerification: async () => {
+    const draft = get().draft;
+    try {
+      await apiRequest('/auth/resend', { method: 'POST', auth: false, body: { email: draft.email } });
+    } catch (err) {
+      throw new Error(errorMessage(err, 'No se pudo reenviar el código'));
+    }
+  },
+
+  // Confirma el código -> login -> perfil académico, y cierra el paso de
+  // onboarding que arrancó startSignup.
+  confirmSignup: async (code) => {
     const draft = get().draft;
     set({ error: null });
 
     try {
-      const { verificationToken } = await apiRequest<{ userId: string; verificationToken: string }>(
-        '/auth/signup',
-        { method: 'POST', auth: false, body: { email: draft.email, password: draft.password, name: draft.name } }
-      );
-
       await apiRequest('/auth/verify', {
         method: 'POST',
         auth: false,
-        body: { email: draft.email, token: verificationToken },
+        body: { email: draft.email, token: code },
       });
 
       const loginResult = await apiRequest<{ token: string; user: BackendUser }>('/auth/login', {
@@ -215,12 +261,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       await markActive();
-      set({ currentUser: mapUserFromBackend(updated), status: 'signed-in', draft: emptyDraft });
+      set({
+        currentUser: mapUserFromBackend(updated),
+        status: 'signed-in',
+        draft: emptyDraft,
+        awaitingVerification: false,
+      });
     } catch (err) {
-      set({ error: errorMessage(err, 'No se pudo completar el registro') });
+      set({ error: errorMessage(err, 'No se pudo verificar el código') });
       throw err;
     }
   },
+
+  // Vuelve al formulario para corregir el correo, sin perder lo demás que ya
+  // se llenó. La cuenta sin verificar creada con el correo anterior queda
+  // huérfana en el servidor hasta que alguien la verifique o quede obsoleta.
+  cancelSignup: () => set({ awaitingVerification: false, error: null }),
 
   login: async (email, password) => {
     set({ error: null });
@@ -242,6 +298,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await clearToken();
     await clearPreference(LAST_ACTIVE_KEY);
+    resetUserScopedStores();
     set({ currentUser: null, status: 'signed-out', draft: emptyDraft });
   },
 

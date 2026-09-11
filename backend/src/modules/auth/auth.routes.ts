@@ -10,6 +10,7 @@ import {
   refreshHandler,
   removeGalleryPhotoHandler,
   reorderPhotosHandler,
+  resendHandler,
   signupHandler,
   updateProfileHandler,
   uploadCoverHandler,
@@ -21,6 +22,7 @@ export const authRouter = Router();
 
 authRouter.post('/signup', asyncHandler(signupHandler));
 authRouter.post('/verify', asyncHandler(verifyHandler));
+authRouter.post('/resend', asyncHandler(resendHandler));
 authRouter.post('/login', asyncHandler(loginHandler));
 authRouter.get('/me', requireAuth, asyncHandler(meHandler));
 authRouter.post('/refresh', requireAuth, asyncHandler(refreshHandler));

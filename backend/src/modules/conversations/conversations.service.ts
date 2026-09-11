@@ -361,6 +361,22 @@ export async function getOrCreateDirectConversation(userId: string, otherUserId:
     throw new HttpError(400, 'No puedes iniciar una conversación contigo mismo');
   }
 
+  // Un chat directo solo se abre entre dos personas que ya se conectaron:
+  // esta es la única puerta, así que respondToConnection ya deja la fila
+  // ACEPTADA antes de llamar aquí.
+  const connected = await prisma.connection.findFirst({
+    where: {
+      status: 'ACEPTADA',
+      OR: [
+        { requesterId: userId, receiverId: otherUserId },
+        { requesterId: otherUserId, receiverId: userId },
+      ],
+    },
+  });
+  if (!connected) {
+    throw new HttpError(403, 'Todavía no tienes una conexión aceptada con esta persona');
+  }
+
   const existing = await prisma.conversation.findFirst({
     where: {
       type: 'DIRECTA',
