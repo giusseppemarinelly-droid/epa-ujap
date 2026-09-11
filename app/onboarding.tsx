@@ -1,23 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, Chip, Input } from '@/src/components/ui';
 import { LookingForCard } from '@/src/components/onboarding/LookingForCard';
+import { CAREERS_BY_FACULTY, FACULTIES, SEMESTER_OPTIONS } from '@/src/constants/academics';
 import { showAlert, useAuthStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
-import type { Faculty, LookingFor } from '@/src/types';
-
-const faculties: Faculty[] = [
-  'Ingeniería',
-  'Ciencias Jurídicas y Políticas',
-  'Ciencias Económicas y Sociales',
-  'Ciencias de la Salud',
-];
-
-const semesterOptions = [1, 2, 3, 4, 5];
+import type { LookingFor } from '@/src/types';
 
 const lookingForOptions: { value: LookingFor; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { value: 'deportes', label: 'Deportes', icon: 'sports-soccer' },
@@ -50,6 +42,13 @@ export default function OnboardingScreen() {
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
+
+  // Cambiar de facultad limpia la carrera: la que estaba elegida puede no
+  // pertenecer a la nueva facultad.
+  function handleSelectFaculty(faculty: (typeof FACULTIES)[number]) {
+    setDraftField('faculty', faculty);
+    setDraftField('career', '');
+  }
 
   useEffect(() => {
     loadInterests();
@@ -230,42 +229,47 @@ export default function OnboardingScreen() {
           FACULTAD
         </Text>
         <View className="flex-row flex-wrap gap-2 mb-4">
-          {faculties.map((faculty) => (
+          {FACULTIES.map((faculty) => (
             <Chip
               key={faculty}
               label={faculty}
               selected={draft.faculty === faculty}
-              onPress={() => setDraftField('faculty', faculty)}
+              onPress={() => handleSelectFaculty(faculty)}
             />
           ))}
         </View>
 
-        <Input
-          label="Carrera"
-          placeholder="Ingeniería en Computación"
-          value={draft.career ?? ''}
-          onChangeText={(career) => setDraftField('career', career)}
-        />
+        <Text className="text-on-surface-variant mb-2" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>
+          CARRERA
+        </Text>
+        {draft.faculty ? (
+          <View className="flex-row flex-wrap gap-2 mb-4">
+            {CAREERS_BY_FACULTY[draft.faculty].map((career) => (
+              <Chip
+                key={career}
+                label={career}
+                selected={draft.career === career}
+                onPress={() => setDraftField('career', career)}
+              />
+            ))}
+          </View>
+        ) : (
+          <Text className="text-on-surface-variant mb-4" style={{ fontSize: 13 }}>
+            Elige primero tu facultad.
+          </Text>
+        )}
 
         <Text className="text-on-surface-variant mb-2" style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>
           SEMESTRE
         </Text>
-        <View className="flex-row gap-2 mb-8">
-          {semesterOptions.map((semester) => (
-            <Pressable
+        <View className="flex-row flex-wrap gap-2 mb-8">
+          {SEMESTER_OPTIONS.map((semester) => (
+            <Chip
               key={semester}
+              label={String(semester)}
+              selected={draft.semester === semester}
               onPress={() => setDraftField('semester', semester)}
-              className={`flex-1 items-center justify-center rounded-full py-3 ${
-                draft.semester === semester ? 'bg-primary' : 'bg-surface-container'
-              }`}
-            >
-              <Text
-                className={draft.semester === semester ? 'text-on-primary' : 'text-on-surface-variant'}
-                style={{ fontFamily: 'Inter_700Bold', fontSize: 14 }}
-              >
-                {semester === 5 ? '5+' : semester}
-              </Text>
-            </Pressable>
+            />
           ))}
         </View>
 

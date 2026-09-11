@@ -7,20 +7,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { Button, Chip, ConfirmDialog, Input } from '@/src/components/ui';
+import { CAREERS_BY_FACULTY, FACULTIES, SEMESTER_OPTIONS } from '@/src/constants/academics';
 import { showAlert, useAuthStore } from '@/src/store';
 import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { Faculty, LookingFor } from '@/src/types';
 
 const MAX_PHOTOS = 6;
-
-const faculties: Faculty[] = [
-  'Ingeniería',
-  'Ciencias Jurídicas y Políticas',
-  'Ciencias Económicas y Sociales',
-  'Ciencias de la Salud',
-];
-
-const semesterOptions = [1, 2, 3, 4, 5];
 
 const lookingForOptions: { value: LookingFor; label: string }[] = [
   { value: 'deportes', label: 'Deportes' },
@@ -64,6 +56,13 @@ export default function EditProfileScreen() {
 
   function toggleLookingFor(value: LookingFor) {
     setLookingFor((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
+  }
+
+  // Cambiar de facultad limpia la carrera: la que estaba elegida puede no
+  // pertenecer a la nueva facultad.
+  function handleSelectFaculty(nextFaculty: Faculty) {
+    setFaculty(nextFaculty);
+    setCareer('');
   }
 
   async function handleAddPhoto() {
@@ -369,8 +368,6 @@ export default function EditProfileScreen() {
           onChangeText={setBio}
           style={{ minHeight: 80, textAlignVertical: 'top' }}
         />
-        <Input label="Carrera" value={career} onChangeText={setCareer} />
-
         <Text
           className="text-on-surface-variant mb-2"
           style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}
@@ -378,8 +375,13 @@ export default function EditProfileScreen() {
           FACULTAD
         </Text>
         <View className="flex-row flex-wrap gap-2 mb-4">
-          {faculties.map((option) => (
-            <Chip key={option} label={option} selected={faculty === option} onPress={() => setFaculty(option)} />
+          {FACULTIES.map((option) => (
+            <Chip
+              key={option}
+              label={option}
+              selected={faculty === option}
+              onPress={() => handleSelectFaculty(option)}
+            />
           ))}
         </View>
 
@@ -387,24 +389,34 @@ export default function EditProfileScreen() {
           className="text-on-surface-variant mb-2"
           style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}
         >
+          CARRERA
+        </Text>
+        {faculty ? (
+          <View className="flex-row flex-wrap gap-2 mb-4">
+            {CAREERS_BY_FACULTY[faculty].map((option) => (
+              <Chip key={option} label={option} selected={career === option} onPress={() => setCareer(option)} />
+            ))}
+          </View>
+        ) : (
+          <Text className="text-on-surface-variant mb-4" style={{ fontSize: 13 }}>
+            Elige primero tu facultad.
+          </Text>
+        )}
+
+        <Text
+          className="text-on-surface-variant mb-2"
+          style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12 }}
+        >
           SEMESTRE
         </Text>
-        <View className="flex-row gap-2 mb-4">
-          {semesterOptions.map((option) => (
-            <Pressable
+        <View className="flex-row flex-wrap gap-2 mb-4">
+          {SEMESTER_OPTIONS.map((option) => (
+            <Chip
               key={option}
+              label={String(option)}
+              selected={semester === option}
               onPress={() => setSemester(option)}
-              className={`flex-1 items-center justify-center rounded-full py-3 ${
-                semester === option ? 'bg-primary' : 'bg-surface-container'
-              }`}
-            >
-              <Text
-                className={semester === option ? 'text-on-primary' : 'text-on-surface-variant'}
-                style={{ fontFamily: 'Inter_700Bold', fontSize: 14 }}
-              >
-                {option === 5 ? '5+' : option}
-              </Text>
-            </Pressable>
+            />
           ))}
         </View>
 
