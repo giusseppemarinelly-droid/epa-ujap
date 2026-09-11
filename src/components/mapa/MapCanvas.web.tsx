@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { MapContainer, Marker, TileLayer } from 'react-leaflet';
 import L from 'leaflet';
@@ -68,9 +69,28 @@ type MapCanvasProps = {
   onSelectPerson: (id: string) => void;
 };
 
-// Mapa real e interactivo en web con Leaflet + tiles CARTO Positron (más
-// limpios y de marca que el estilo por defecto de OpenStreetMap). Gratis,
-// sin API key. react-native-maps no tiene build web, por eso esta variante.
+// Filtro CSS para simular un mapa oscuro: los tiles de OpenStreetMap solo
+// vienen en un estilo (claro), a diferencia de CARTO que ofrece light_all y
+// dark_all. Se inyecta una sola vez en <head> porque react-leaflet no expone
+// un prop `style`/`filter` para el TileLayer, solo `className`.
+function useDarkTileFilter() {
+  useEffect(() => {
+    const styleId = 'epa-map-dark-filter';
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent =
+      '.epa-tiles-dark { filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.7); }';
+    document.head.appendChild(style);
+  }, []);
+}
+
+// Mapa real e interactivo en web con Leaflet. Tiles estándar de
+// OpenStreetMap: gratis y sin API key, a diferencia de CARTO (que en agosto
+// 2026 empezó a exigir una clave incluso para su capa gratuita). Sin estilo
+// oscuro propio, así que el modo oscuro se simula con un filtro CSS — si el
+// tráfico crece mucho, conviene pasar a un proveedor con capa dedicada.
+// react-native-maps no tiene build web, por eso esta variante aparte.
 export function MapCanvas({
   plans,
   people,
@@ -79,6 +99,7 @@ export function MapCanvas({
   onSelectPerson,
 }: MapCanvasProps) {
   const isDark = useThemeStore((state) => state.resolvedScheme === 'dark');
+  useDarkTileFilter();
 
   return (
     <View style={{ flex: 1 }}>
@@ -91,11 +112,11 @@ export function MapCanvas({
         scrollWheelZoom
       >
         <TileLayer
-          key={isDark ? 'dark' : 'light'}
-          url={`https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
-          attribution='&copy; OpenStreetMap, &copy; CARTO'
-          subdomains="abcd"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          subdomains="abc"
           maxZoom={19}
+          className={isDark ? 'epa-tiles-dark' : undefined}
         />
         {plans.map((plan) => (
           <Marker
