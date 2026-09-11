@@ -35,8 +35,17 @@ function nextSaturday() {
   return date;
 }
 
+// "En 1 hora" se redondea al minuto: getValue() se vuelve a llamar en cada
+// render para comparar contra `dateTime` y marcar el chip seleccionado, y
+// con milisegundos crudos casi nunca daba el mismo valor dos veces seguidas.
+function inOneHour() {
+  const date = new Date(Date.now() + 60 * 60 * 1000);
+  date.setSeconds(0, 0);
+  return date;
+}
+
 const timePresets = [
-  { label: 'En 1 hora', getValue: () => new Date(Date.now() + 60 * 60 * 1000) },
+  { label: 'En 1 hora', getValue: inOneHour },
   { label: 'Esta tarde (5pm)', getValue: () => nextAt(17) },
   { label: 'Mañana 10am', getValue: () => nextAt(10, 1) },
   { label: 'Este fin de semana', getValue: () => nextSaturday() },

@@ -47,3 +47,21 @@ export async function leaveGroupHandler(req: Request, res: Response) {
   const group = await groupsService.leaveGroup(req.params.id, req.userId!);
   res.json(sanitizeGroup(group));
 }
+
+const updateGroupSchema = z.object({
+  name: z.string().min(3).optional(),
+  category: categoryEnum.optional(),
+  description: z.string().min(1).optional(),
+  imageUrl: z.string().url().optional(),
+});
+
+export async function updateGroupHandler(req: Request, res: Response) {
+  const data = updateGroupSchema.parse(req.body);
+  const group = await groupsService.updateGroup(req.params.id, req.userId!, data);
+  res.json(sanitizeGroup(group));
+}
+
+export async function deleteGroupHandler(req: Request, res: Response) {
+  await groupsService.deleteGroup(req.params.id, req.userId!);
+  res.json({ ok: true });
+}

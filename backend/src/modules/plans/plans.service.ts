@@ -25,6 +25,7 @@ export async function listPlans(near?: { lat: number; lng: number; radiusKm: num
     where: { isPublic: true },
     include: planWithRelations,
     orderBy: { dateTime: 'asc' },
+    take: 200,
   });
 
   if (!near) return plans;
@@ -89,4 +90,27 @@ export async function joinPlan(planId: string, userId: string, status: AttendeeS
 export async function leavePlan(planId: string, userId: string) {
   await prisma.planAttendee.deleteMany({ where: { planId, userId } });
   return getPlan(planId);
+}
+
+type UpdatePlanInput = Partial<CreatePlanInput>;
+
+async function assertPlanOwner(planId: string, userId: string) {
+  const plan = await prisma.plan.findUnique({ where: { id: planId } });
+  if (!plan) {
+    throw new HttpError(404, 'Plan no encontrado');
+  }
+  if (plan.creatorId !== userId) {
+    throw new HttpError(403, 'Solo quien armó el plan puede editarlo');
+  }
+}
+
+export async function updatePlan(planId: string, userId: string, data: UpdatePlanInput) {
+  await assertPlanOwner(planId, userId);
+  await prisma.plan.update({ where: { id: planId }, data });
+  return getPlan(planId);
+}
+
+export async function cancelPlan(planId: string, userId: string) {
+  await assertPlanOwner(planId, userId);
+  await prisma.plan.delete({ where: { id: planId } });
 }

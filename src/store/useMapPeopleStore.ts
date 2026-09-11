@@ -13,7 +13,7 @@ type MapPeopleState = {
   hydrateSharing: (value: boolean) => void;
   fetchPeople: () => Promise<void>;
   pushMyLocation: () => Promise<void>;
-  setSharing: (value: boolean) => Promise<void>;
+  setSharing: (value: boolean, opts?: { rollbackOnFailure?: boolean }) => Promise<void>;
   reset: () => void;
 };
 
@@ -44,8 +44,10 @@ export const useMapPeopleStore = create<MapPeopleState>((set, get) => ({
     const { granted } = await Location.requestForegroundPermissionsAsync();
     if (!granted) {
       // El permiso pudo revocarse desde ajustes del sistema. En vez de
-      // reintentar cada minuto contra un "no", se apaga el interruptor.
-      await get().setSharing(false);
+      // reintentar cada minuto contra un "no", se apaga el interruptor. Sin
+      // rollbackOnFailure: false, un fallo de red en el PATCH de abajo volvía
+      // a prender "sharing" aunque el permiso siguiera negado.
+      await get().setSharing(false, { rollbackOnFailure: false });
       return;
     }
 
@@ -63,7 +65,9 @@ export const useMapPeopleStore = create<MapPeopleState>((set, get) => ({
     }
   },
 
-  setSharing: async (value) => {
+  setSharing: async (value, opts = {}) => {
+    const { rollbackOnFailure = true } = opts;
+
     if (value) {
       // El permiso se pide antes de encender nada: si el usuario lo niega, el
       // interruptor se queda apagado en vez de prometer algo que no ocurre.
@@ -74,14 +78,24 @@ export const useMapPeopleStore = create<MapPeopleState>((set, get) => ({
       }
     }
 
+    // Se refleja de inmediato: si esto viene de un permiso revocado, dejar
+    // "sharing" en true mientras se espera la respuesta del servidor sería
+    // mentir sobre el estado real.
+    set({ sharing: value });
+
     try {
       await apiRequest('/location/sharing', { method: 'PATCH', body: { shareLocation: value } });
     } catch {
-      set({ sharing: !value });
+      if (rollbackOnFailure) {
+        // Fallo de red en un toggle manual: se revierte para no prometer un
+        // estado que el servidor nunca confirmó.
+        set({ sharing: !value });
+      }
+      // Si no se debe revertir (permiso del SO revocado), el switch se queda
+      // apagado localmente aunque el PATCH no haya confirmado nada.
       return;
     }
 
-    set({ sharing: value });
     if (value) await get().pushMyLocation();
   },
 }));

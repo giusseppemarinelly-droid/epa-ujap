@@ -85,7 +85,9 @@ const updateProfileSchema = z.object({
   semester: z.number().int().min(1).max(12).optional(),
   bio: z.string().max(280).optional(),
   age: z.number().int().min(16).max(99).optional(),
-  photoUrl: z.string().url().optional(),
+  // photoUrl NO va aquí a propósito: solo se cambia vía /me/photo (o
+  // /me/photos), que pasa por uploadImageToStorage y valida el archivo.
+  // Aceptarlo por PATCH dejaría fijar cualquier URL externa sin validar.
   interestIds: z.array(z.string()).optional(),
   lookingFor: z.array(lookingForEnum).optional(),
 });

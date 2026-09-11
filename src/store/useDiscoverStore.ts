@@ -13,6 +13,8 @@ type DiscoverState = {
   queue: string[];
   loading: boolean;
   history: { userId: string; action: DiscoverAction }[];
+  /** Id de la Connection creada por cada "conectar", para poder cancelarla al deshacer. */
+  sentConnectionIdByUserId: Record<string, string>;
   fetchCandidates: () => Promise<void>;
   descartar: (userId: string) => void;
   conectar: (userId: string) => void;
@@ -33,8 +35,10 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
   queue: [],
   loading: false,
   history: [],
+  sentConnectionIdByUserId: {},
 
-  reset: () => set({ usersById: {}, queue: [], loading: false, history: [] }),
+  reset: () =>
+    set({ usersById: {}, queue: [], loading: false, history: [], sentConnectionIdByUserId: {} }),
 
   fetchCandidates: async () => {
     set({ loading: true });
@@ -71,17 +75,39 @@ export const useDiscoverStore = create<DiscoverState>((set) => ({
     } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     }
-    apiRequest('/connections', { method: 'POST', body: { receiverId: userId } }).catch(() => {
-      // El usuario ya salió de la pila localmente; si falla el request no
-      // hay una acción visible que revertir.
-    });
+    apiRequest<{ id: string }>('/connections', { method: 'POST', body: { receiverId: userId } })
+      .then((connection) => {
+        // Se guarda para que "deshacer" pueda cancelarla de verdad. Si el
+        // usuario ya deshizo antes de que esto llegara, no pasa nada: el id
+        // simplemente no se usa.
+        set((state) => ({
+          sentConnectionIdByUserId: { ...state.sentConnectionIdByUserId, [userId]: connection.id },
+        }));
+      })
+      .catch(() => {
+        // El usuario ya salió de la pila localmente; si falla el request no
+        // hay una acción visible que revertir.
+      });
   },
 
   deshacer: () =>
     set((state) => {
       const last = state.history[state.history.length - 1];
       if (!last) return state;
+
+      if (last.action === 'conectado') {
+        const connectionId = state.sentConnectionIdByUserId[last.userId];
+        // Si el id todavía no había llegado (deshacer casi instantáneo), no
+        // hay nada que cancelar del lado del servidor.
+        if (connectionId) {
+          apiRequest(`/connections/${connectionId}`, { method: 'DELETE' }).catch(() => {});
+        }
+      }
+
+      const { [last.userId]: _removed, ...restConnectionIds } = state.sentConnectionIdByUserId;
+
       return {
+        sentConnectionIdByUserId: restConnectionIds,
         // Los descartados no se persisten, así que un refetch pudo haberlo
         // devuelto a la cola; se limpia antes de ponerlo al frente para no
         // dejarlo duplicado.

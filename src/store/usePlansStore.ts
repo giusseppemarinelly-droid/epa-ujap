@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 
 import { apiRequest } from '@/src/lib/api';
-import { mapPlanFromBackend, planCategoryToBackend, type BackendPlan } from '@/src/lib/enumMappers';
-import type { Plan, PlanCategory } from '@/src/types';
+import { attendeeStatusToBackend, mapPlanFromBackend, planCategoryToBackend, type BackendPlan } from '@/src/lib/enumMappers';
+import type { AttendeeStatus, Plan, PlanCategory } from '@/src/types';
 
 type CreatePlanInput = {
   title: string;
@@ -20,7 +20,7 @@ type PlansState = {
   loading: boolean;
   error: string | null;
   fetchPlans: () => Promise<void>;
-  joinPlan: (planId: string) => Promise<void>;
+  joinPlan: (planId: string, status?: AttendeeStatus) => Promise<void>;
   leavePlan: (planId: string) => Promise<void>;
   createPlan: (data: CreatePlanInput) => Promise<Plan>;
   reset: () => void;
@@ -43,8 +43,11 @@ export const usePlansStore = create<PlansState>((set, get) => ({
     }
   },
 
-  joinPlan: async (planId) => {
-    const raw = await apiRequest<BackendPlan>(`/plans/${planId}/join`, { method: 'POST' });
+  joinPlan: async (planId, status) => {
+    const raw = await apiRequest<BackendPlan>(`/plans/${planId}/join`, {
+      method: 'POST',
+      body: status ? { status: attendeeStatusToBackend[status] } : undefined,
+    });
     const updated = mapPlanFromBackend(raw);
     set({ plans: get().plans.map((plan) => (plan.id === planId ? updated : plan)) });
   },

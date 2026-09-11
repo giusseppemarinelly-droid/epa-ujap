@@ -25,6 +25,10 @@ const VIDEO_FALLBACK_MS = 17000;
 // mantener presionado (pausar), igual que en Snapchat.
 const TAP_THRESHOLD_MS = 220;
 
+// Si el Snap ya expiró o se borró del servidor, mediaUrl llega vacío: se
+// avisa y se cierra rápido en vez de dejar una pantalla negra en silencio.
+const MISSING_MEDIA_DURATION_MS = 3000;
+
 type SnapViewerProps = {
   mediaUrl: string;
   kind: MessageKind;
@@ -37,14 +41,15 @@ type SnapViewerProps = {
  * estado, así que no hay forma de volver a abrirlo.
  */
 export function SnapViewer({ mediaUrl, kind, onClose }: SnapViewerProps) {
+  const hasMedia = mediaUrl.length > 0;
   const isVideo = kind === 'video';
   const progress = useSharedValue(1);
-  const totalMs = useRef(isVideo ? VIDEO_FALLBACK_MS : PHOTO_DURATION_MS);
+  const totalMs = useRef(!hasMedia ? MISSING_MEDIA_DURATION_MS : isVideo ? VIDEO_FALLBACK_MS : PHOTO_DURATION_MS);
   const pressStartedAt = useRef(0);
   const closed = useRef(false);
   const [remaining, setRemaining] = useState(Math.ceil(totalMs.current / 1000));
 
-  const player = useVideoPlayer(isVideo ? mediaUrl : null, (instance) => {
+  const player = useVideoPlayer(hasMedia && isVideo ? mediaUrl : null, (instance) => {
     instance.loop = false;
     instance.play();
   });
@@ -72,7 +77,7 @@ export function SnapViewer({ mediaUrl, kind, onClose }: SnapViewerProps) {
   }, [progress, runCountdown]);
 
   useEffect(() => {
-    if (!isVideo) return;
+    if (!isVideo || !hasMedia) return;
 
     // La duración real solo se conoce cuando el video termina de cargar, así
     // que la cuenta se reajusta en ese momento en vez de al montar.
@@ -89,7 +94,7 @@ export function SnapViewer({ mediaUrl, kind, onClose }: SnapViewerProps) {
       loaded.remove();
       ended.remove();
     };
-  }, [finish, isVideo, player, progress, runCountdown]);
+  }, [finish, hasMedia, isVideo, player, progress, runCountdown]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -123,7 +128,13 @@ export function SnapViewer({ mediaUrl, kind, onClose }: SnapViewerProps) {
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
       >
-        {isVideo ? (
+        {!hasMedia ? (
+          <View className="flex-1 items-center justify-center px-10">
+            <Text style={{ color: '#FFFFFF', fontSize: 15, textAlign: 'center', opacity: 0.85 }}>
+              Este Snap ya no está disponible.
+            </Text>
+          </View>
+        ) : isVideo ? (
           <VideoView
             player={player}
             style={{ flex: 1, backgroundColor: '#000000' }}

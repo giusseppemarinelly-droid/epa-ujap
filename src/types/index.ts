@@ -15,7 +15,8 @@ export type User = {
   id: string;
   email: string;
   name: string;
-  age: number;
+  /** Nadie lo llena todavía desde la app; sin valor real hasta agregar el input. */
+  age?: number;
   faculty: Faculty;
   career: string;
   semester: number;
@@ -40,6 +41,8 @@ export type User = {
 export type PlanCategory = 'deportes' | 'estudio' | 'comida' | 'proyectos' | 'cultura';
 
 export type PlanStatus = 'programado' | 'en_curso' | 'finalizado';
+
+export type AttendeeStatus = 'va' | 'quizas' | 'asistio';
 
 export type PersonSummary = {
   id: string;
@@ -66,6 +69,8 @@ export type Plan = {
   isPublic: boolean;
   attendeeIds: string[];
   attendees?: PersonSummary[];
+  /** Estado (va/quizás/asistió) de cada asistente, por id. */
+  attendeeStatusByUserId: Record<string, AttendeeStatus>;
 };
 
 export type GroupCategory = 'Académico' | 'Deportes' | 'Tecnología' | 'Creatividad' | 'Arte';

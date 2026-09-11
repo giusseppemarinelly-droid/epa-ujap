@@ -44,6 +44,9 @@ export async function listConversations(userId: string) {
         },
       },
     },
+    // Tope simple contra una consulta sin fin para quien acumule muchísimos
+    // chats; una paginación real (cursor) es un cambio más grande.
+    take: 200,
   });
 
   const now = new Date();
@@ -77,13 +80,21 @@ async function assertParticipant(conversationId: string, userId: string) {
   }
 }
 
+// Sin tope, un chat viejo cargaría su historial completo cada vez que se
+// abre. Se trae lo más reciente en orden descendente y se revierte, en vez
+// de construir "cargar mensajes anteriores" — eso sí sería una función
+// nueva, no un límite en la consulta existente.
+const MAX_MESSAGES_PER_CONVERSATION = 100;
+
 export async function getMessages(conversationId: string, userId: string) {
   await assertParticipant(conversationId, userId);
-  const messages = await prisma.message.findMany({
+  const recent = await prisma.message.findMany({
     where: { conversationId },
-    orderBy: { sentAt: 'asc' },
+    orderBy: { sentAt: 'desc' },
+    take: MAX_MESSAGES_PER_CONVERSATION,
     include: { sender: true, views: { select: { userId: true } } },
   });
+  const messages = recent.reverse();
 
   // La URL de un Snap no viaja en la lista. Si viajara, esconder la foto sería
   // puro teatro: el cliente ya la tendría descargada y bastaría con mirar la
@@ -240,17 +251,23 @@ async function deleteChatMediaFromStorage(publicUrl: string) {
   if (index === -1) return;
   const path = publicUrl.slice(index + marker.length);
 
+  // Si el borrado falla el Snap ya queda inaccesible desde la app igual,
+  // porque mediaUrl se pone en null — no vale la pena tumbar la petición por
+  // esto. Pero sin loguearlo, un archivo "destruido" puede seguir público en
+  // el bucket para siempre sin que nadie se entere.
   try {
-    await fetch(`${env.SUPABASE_URL}/storage/v1/object/${MEDIA_BUCKET}/${path}`, {
+    const response = await fetch(`${env.SUPABASE_URL}/storage/v1/object/${MEDIA_BUCKET}/${path}`, {
       method: 'DELETE',
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
         Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
       },
     });
-  } catch {
-    // Si el borrado falla el Snap ya quedó inaccesible desde la app igual,
-    // porque mediaUrl se pone en null. No vale la pena tumbar la petición.
+    if (!response.ok) {
+      console.error(`No se pudo borrar el archivo de storage (${response.status}): ${path}`);
+    }
+  } catch (err) {
+    console.error(`No se pudo borrar el archivo de storage: ${path}`, err);
   }
 }
 
@@ -400,6 +417,11 @@ export async function getOrCreateDirectConversation(userId: string, otherUserId:
 
 export async function createGroupConversation(creatorId: string, participantIds: string[], title: string) {
   const uniqueParticipantIds = Array.from(new Set([creatorId, ...participantIds]));
+
+  const existingCount = await prisma.user.count({ where: { id: { in: uniqueParticipantIds } } });
+  if (existingCount !== uniqueParticipantIds.length) {
+    throw new HttpError(400, 'Uno de los participantes no existe');
+  }
 
   return prisma.conversation.create({
     data: {

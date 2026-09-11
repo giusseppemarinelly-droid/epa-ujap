@@ -26,6 +26,9 @@ export default function NewChatScreen() {
   useEffect(() => {
     apiRequest<BackendUser[]>('/users')
       .then((raw) => setPeople(raw.map(mapUserFromBackend)))
+      .catch(() => {
+        Alert.alert('No se pudo cargar la lista', 'Revisa tu conexión e intenta de nuevo.');
+      })
       .finally(() => setLoading(false));
   }, []);
 

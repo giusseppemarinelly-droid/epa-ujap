@@ -1,10 +1,11 @@
-import { Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar, Button, Card } from '@/src/components/ui';
 import { useAuthStore, usePlansStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
-import type { Plan } from '@/src/types';
+import type { AttendeeStatus, Plan } from '@/src/types';
 
 type PlanDetailCardProps = {
   plan: Plan;
@@ -16,10 +17,23 @@ export function PlanDetailCard({ plan, onClose }: PlanDetailCardProps) {
   const currentUser = useAuthStore((state) => state.currentUser);
   const attendees = plan.attendees ?? [];
   const alreadyJoined = !!currentUser && plan.attendeeIds.includes(currentUser.id);
+  const [joining, setJoining] = useState<AttendeeStatus | null>(null);
   const time = new Date(plan.dateTime).toLocaleTimeString('es-VE', {
     hour: 'numeric',
     minute: '2-digit',
   });
+
+  async function handleJoin(status: AttendeeStatus) {
+    if (joining) return;
+    setJoining(status);
+    try {
+      await joinPlan(plan.id, status);
+    } catch (err) {
+      Alert.alert('No se pudo apuntar', err instanceof Error ? err.message : undefined);
+    } finally {
+      setJoining(null);
+    }
+  }
 
   return (
     <Card className="absolute left-5 right-5 bottom-28">
@@ -66,12 +80,22 @@ export function PlanDetailCard({ plan, onClose }: PlanDetailCardProps) {
         </Text>
       </View>
 
-      <View className="mt-4">
+      <View className="mt-4" style={{ gap: 8 }}>
         <Button
-          label={alreadyJoined ? 'Ya estás dentro' : 'Me apunto'}
-          onPress={() => joinPlan(plan.id)}
-          disabled={alreadyJoined}
+          label={alreadyJoined ? 'Ya estás dentro' : joining === 'va' ? 'Apuntando...' : 'Me apunto'}
+          onPress={() => handleJoin('va')}
+          disabled={alreadyJoined || joining !== null}
+          loading={joining === 'va'}
         />
+        {!alreadyJoined && (
+          <Button
+            label={joining === 'quizas' ? 'Apuntando...' : 'Quizás voy'}
+            variant="ghost"
+            onPress={() => handleJoin('quizas')}
+            disabled={joining !== null}
+            loading={joining === 'quizas'}
+          />
+        )}
       </View>
     </Card>
   );

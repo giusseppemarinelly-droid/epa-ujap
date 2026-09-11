@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -101,8 +101,8 @@ export default function MapaScreen() {
       const conversation = await startDirectConversation(selectedPerson.id, currentUser.id);
       setSelectedPersonId(null);
       router.push(`/chat/${conversation.id}`);
-    } catch {
-      // Sin red no se abre el chat; la tarjeta se queda como está.
+    } catch (err) {
+      Alert.alert('No se pudo abrir el chat', err instanceof Error ? err.message : undefined);
     } finally {
       setOpeningChat(false);
     }

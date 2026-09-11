@@ -35,6 +35,10 @@ export default function LocationPickerScreen() {
   const [searching, setSearching] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Arrastrar el mapa dos veces seguidas dispara dos fetch; sin esto, la
+  // respuesta del primero podía llegar después que la del segundo y pisar la
+  // dirección con una que ya no corresponde al pin actual.
+  const geocodeSeqRef = useRef(0);
 
   useEffect(() => {
     reverseGeocode(initial.lat, initial.lng);
@@ -42,14 +46,23 @@ export default function LocationPickerScreen() {
   }, []);
 
   function reverseGeocode(lat: number, lng: number) {
+    const seq = ++geocodeSeqRef.current;
     setResolvingAddress(true);
     fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
       headers: { 'Accept-Language': 'es' },
     })
       .then((res) => res.json())
-      .then((data) => setAddress(data.display_name ?? 'Ubicación sin nombre'))
-      .catch(() => setAddress('No se pudo obtener la dirección'))
-      .finally(() => setResolvingAddress(false));
+      .then((data) => {
+        if (seq !== geocodeSeqRef.current) return;
+        setAddress(data.display_name ?? 'Ubicación sin nombre');
+      })
+      .catch(() => {
+        if (seq !== geocodeSeqRef.current) return;
+        setAddress('No se pudo obtener la dirección');
+      })
+      .finally(() => {
+        if (seq === geocodeSeqRef.current) setResolvingAddress(false);
+      });
   }
 
   function handleRegionChange(lat: number, lng: number) {

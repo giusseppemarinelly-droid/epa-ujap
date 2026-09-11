@@ -1,4 +1,5 @@
 import type {
+  AttendeeStatus,
   MapPerson,
   MessageKind,
   Conversation,
@@ -59,6 +60,16 @@ export const planStatusFromBackend: Record<string, PlanStatus> = Object.fromEntr
   Object.entries(planStatusToBackend).map(([label, value]) => [value, label as PlanStatus])
 );
 
+export const attendeeStatusToBackend: Record<AttendeeStatus, string> = {
+  va: 'VA',
+  quizas: 'QUIZAS',
+  asistio: 'ASISTIO',
+};
+
+export const attendeeStatusFromBackend: Record<string, AttendeeStatus> = Object.fromEntries(
+  Object.entries(attendeeStatusToBackend).map(([label, value]) => [value, label as AttendeeStatus])
+);
+
 export const groupCategoryToBackend: Record<GroupCategory, string> = {
   Académico: 'ACADEMICO',
   Deportes: 'DEPORTES',
@@ -108,7 +119,7 @@ export function mapUserFromBackend(raw: BackendUser): User {
     id: raw.id,
     email: raw.email,
     name: raw.name,
-    age: raw.age ?? 0,
+    age: raw.age ?? undefined,
     faculty: raw.faculty ? (facultyFromBackend[raw.faculty] ?? 'Ingeniería') : 'Ingeniería',
     career: raw.career ?? '',
     semester: raw.semester ?? 1,
@@ -148,7 +159,7 @@ export type BackendPlan = {
   capacity: number;
   status: string;
   isPublic: boolean;
-  attendees: { userId: string; user: BackendPersonSummary }[];
+  attendees: { userId: string; user: BackendPersonSummary; status: string }[];
 };
 
 function mapPersonSummary(raw: BackendPersonSummary) {
@@ -170,6 +181,9 @@ export function mapPlanFromBackend(raw: BackendPlan): Plan {
     isPublic: raw.isPublic,
     attendeeIds: raw.attendees.map((attendee) => attendee.userId),
     attendees: raw.attendees.map((attendee) => mapPersonSummary(attendee.user)),
+    attendeeStatusByUserId: Object.fromEntries(
+      raw.attendees.map((attendee) => [attendee.userId, attendeeStatusFromBackend[attendee.status] ?? 'va'])
+    ),
   };
 }
 

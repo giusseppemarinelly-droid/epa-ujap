@@ -13,6 +13,7 @@ export async function listGroups(category?: GroupCategory) {
     where: category ? { category } : undefined,
     include: groupWithRelations,
     orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+    take: 200,
   });
 }
 
@@ -83,4 +84,27 @@ export async function leaveGroup(groupId: string, userId: string) {
   await prisma.groupMember.deleteMany({ where: { groupId, userId } });
   await syncConversationParticipant(groupId, userId, 'remove');
   return getGroup(groupId);
+}
+
+type UpdateGroupInput = Partial<CreateGroupInput>;
+
+async function assertGroupOwner(groupId: string, userId: string) {
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group) {
+    throw new HttpError(404, 'Grupo no encontrado');
+  }
+  if (group.creatorId !== userId) {
+    throw new HttpError(403, 'Solo quien creó el grupo puede editarlo');
+  }
+}
+
+export async function updateGroup(groupId: string, userId: string, data: UpdateGroupInput) {
+  await assertGroupOwner(groupId, userId);
+  await prisma.group.update({ where: { id: groupId }, data });
+  return getGroup(groupId);
+}
+
+export async function deleteGroup(groupId: string, userId: string) {
+  await assertGroupOwner(groupId, userId);
+  await prisma.group.delete({ where: { id: groupId } });
 }

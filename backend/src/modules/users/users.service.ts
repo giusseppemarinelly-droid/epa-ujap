@@ -70,6 +70,9 @@ export async function listDiscoverable(filters: DiscoverFilters) {
     },
     include: { interests: { include: { interest: true } } },
     orderBy: { createdAt: 'desc' },
+    // Tope simple contra una consulta sin fin; una paginación real (cursor)
+    // es un cambio más grande que no hace falta todavía a esta escala.
+    take: 100,
   });
 
   // El grafo se arma con el propio usuario incluido a propósito: mis

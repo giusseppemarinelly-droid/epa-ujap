@@ -17,6 +17,11 @@ import { usersRouter } from './modules/users/users.routes';
 const app = express();
 const publicWebDir = path.join(__dirname, '..', 'public-web');
 
+// Render (y la mayoría de los PaaS) entrega las requests detrás de un proxy
+// reverso: sin esto, req.ip sería siempre la IP del proxy y el rate limiter
+// de las rutas de auth trataría a todos los usuarios como uno solo.
+app.set('trust proxy', 1);
+
 app.use(cors());
 // Límite alto porque las fotos de perfil viajan como base64 en el body
 // (una foto de cámara sin comprimir de más puede superar los 10mb en base64).

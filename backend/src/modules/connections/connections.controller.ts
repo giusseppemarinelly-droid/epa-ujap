@@ -12,6 +12,11 @@ export async function sendConnectionHandler(req: Request, res: Response) {
   res.status(201).json(connection);
 }
 
+export async function cancelConnectionHandler(req: Request, res: Response) {
+  await connectionsService.cancelConnection(req.params.id, req.userId!);
+  res.json({ ok: true });
+}
+
 export async function listIncomingHandler(req: Request, res: Response) {
   const requests = await connectionsService.listIncoming(req.userId!);
   res.json(

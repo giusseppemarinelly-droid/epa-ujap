@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 
 import { asyncHandler } from '../../lib/asyncHandler';
 import { requireAuth } from '../../middleware/auth';
@@ -20,10 +21,29 @@ import {
 
 export const authRouter = Router();
 
-authRouter.post('/signup', asyncHandler(signupHandler));
-authRouter.post('/verify', asyncHandler(verifyHandler));
-authRouter.post('/resend', asyncHandler(resendHandler));
-authRouter.post('/login', asyncHandler(loginHandler));
+// Protege signup/verify/resend contra abuso (spam de correos, tanteo de
+// códigos) y login contra fuerza bruta. Los límites son generosos para no
+// molestar a alguien que solo se equivocó un par de veces.
+const signupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Espera unos minutos y vuelve a intentar.' },
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos. Espera unos minutos y vuelve a intentar.' },
+});
+
+authRouter.post('/signup', signupLimiter, asyncHandler(signupHandler));
+authRouter.post('/verify', signupLimiter, asyncHandler(verifyHandler));
+authRouter.post('/resend', signupLimiter, asyncHandler(resendHandler));
+authRouter.post('/login', loginLimiter, asyncHandler(loginHandler));
 authRouter.get('/me', requireAuth, asyncHandler(meHandler));
 authRouter.post('/refresh', requireAuth, asyncHandler(refreshHandler));
 authRouter.post('/heartbeat', requireAuth, asyncHandler(heartbeatHandler));

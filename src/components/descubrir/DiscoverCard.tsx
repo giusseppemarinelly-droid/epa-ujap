@@ -97,7 +97,8 @@ export function DiscoverCard({ user, currentUser }: DiscoverCardProps) {
       <View className="absolute left-5 right-5 bottom-5" pointerEvents="none">
         <View className="flex-row items-center">
           <Text className="text-white" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 24 }}>
-            {user.name}, {user.age}
+            {user.name}
+            {user.age ? `, ${user.age}` : ''}
           </Text>
           {user.verified && (
             <MaterialIcons name="verified" size={20} color={colors['ujap-gold']} style={{ marginLeft: 6 }} />
