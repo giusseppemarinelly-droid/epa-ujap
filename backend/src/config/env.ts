@@ -10,11 +10,10 @@ const envSchema = z.object({
   ALLOWED_EMAIL_DOMAIN: z.string().default('gmail.com'),
   SUPABASE_URL: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
-  // Cuenta de Gmail que manda el código de verificación (requiere una
-  // "contraseña de aplicación" de 16 caracteres, no la contraseña normal).
-  GMAIL_USER: z.string().email().optional(),
-  GMAIL_APP_PASSWORD: z.string().optional(),
-  EMAIL_FROM: z.string().optional(),
+  // API key de Brevo (app.brevo.com → SMTP & API → API keys) y el correo
+  // remitente, que tiene que estar verificado como sender en Brevo.
+  BREVO_API_KEY: z.string().optional(),
+  EMAIL_SENDER: z.string().email().optional(),
   // Orígenes extra separados por coma para CORS, además de los de desarrollo
   // local ya incluidos por defecto (ver index.ts). En producción el front se
   // sirve desde el mismo origen que la API, así que normalmente no hace falta.

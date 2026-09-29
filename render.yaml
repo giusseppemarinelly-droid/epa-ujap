@@ -16,9 +16,7 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: GMAIL_USER
+      - key: BREVO_API_KEY
         sync: false
-      - key: GMAIL_APP_PASSWORD
-        sync: false
-      - key: EMAIL_FROM
+      - key: EMAIL_SENDER
         sync: false

@@ -1,0 +1,15 @@
+# Respaldo del cron de cron-job.org: pega a /health para que Render free no
+# se duerma (se duerme tras 15 min sin tráfico). GitHub puede retrasar los
+# crons varios minutos, por eso no es el ping principal.
+name: keepalive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --retry 3 --max-time 90 https://epa-ujap.onrender.com/health

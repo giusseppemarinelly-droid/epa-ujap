@@ -4,6 +4,7 @@ import cors from 'cors';
 import express from 'express';
 
 import { env } from './config/env';
+import { prisma } from './lib/prisma';
 import { errorHandler, HttpError } from './middleware/errorHandler';
 import { authRouter } from './modules/auth/auth.routes';
 import { connectionsRouter } from './modules/connections/connections.routes';
@@ -51,7 +52,17 @@ app.use((req, res, next) => {
 // (una foto de cámara sin comprimir de más puede superar los 10mb en base64).
 app.use(express.json({ limit: '25mb' }));
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
+// El cron externo que evita que Render free se duerma pega aquí cada 10 min.
+// El SELECT 1 hace que ese mismo ping cuente como actividad en Supabase, que
+// pausa las bases free tras una semana sin uso.
+app.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true });
+  } catch {
+    res.status(503).json({ ok: false });
+  }
+});
 
 const apiRouters: Array<[string, express.Router]> = [
   ['/auth', authRouter],
