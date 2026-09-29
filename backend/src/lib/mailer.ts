@@ -11,26 +11,43 @@ type Email = { to: string; subject: string; text: string; html: string };
 
 const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
 
+type RelayResult = { ok?: boolean; error?: string };
+
 async function sendViaRelay(email: Email) {
-  // Apps Script responde a los POST con un redirect a googleusercontent.com y
-  // siempre con HTTP 200, así que el resultado real viene en el JSON. Tras un
-  // rato sin uso su primera ejecución puede pasar de 15 s. El tope va por
-  // debajo de los 30 s con que la app corta cada request (src/lib/api.ts),
-  // para que al usuario le llegue este error y no uno de conexión.
+  // Apps Script ejecuta doPost completo y recién ahí responde 302 hacia
+  // script.googleusercontent.com, donde queda el JSON con el resultado. Desde
+  // Render ese segundo salto se quedaba colgado aunque el correo ya hubiera
+  // salido, así que el redirect se sigue a mano y con un tope corto.
   let response: Response;
   try {
     response = await fetch(env.MAIL_RELAY_URL!, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ secret: env.MAIL_RELAY_SECRET, ...email }),
-      signal: AbortSignal.timeout(25_000),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(20_000),
     });
   } catch (err) {
     console.error('El relay de correo no respondió', err);
     throw new HttpError(504, 'El correo está tardando más de lo normal, intenta de nuevo');
   }
-  const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
-  if (!response.ok || !result?.ok) {
+
+  const location = response.headers.get('location');
+  let result: RelayResult | null = null;
+  if (response.status >= 300 && response.status < 400 && location) {
+    try {
+      const echo = await fetch(location, { signal: AbortSignal.timeout(5_000) });
+      result = (await echo.json()) as RelayResult;
+    } catch (err) {
+      // El script ya corrió; sin poder leer su respuesta se asume enviado.
+      console.warn('No se pudo leer la respuesta del relay, se asume enviado', err);
+      return;
+    }
+  } else {
+    result = (await response.json().catch(() => null)) as RelayResult | null;
+  }
+
+  if (!result?.ok) {
     console.error('El relay de correo falló', response.status, result?.error);
     throw new HttpError(502, 'No pudimos mandar el correo, intenta de nuevo en un rato');
   }
