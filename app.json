@@ -12,13 +12,19 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.epaujap.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#F9F9F9",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -27,21 +33,29 @@
     },
     "plugins": [
       "expo-router",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
       "expo-font",
       "expo-secure-store",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Epa necesita acceso a tus fotos para que puedas cambiar tu foto de perfil.",
-          "cameraPermission": "Epa usa la camara para que puedas mandar Snaps en tus chats."
+          "photosPermission": "Epa necesita acceso a tus fotos para que puedas cambiar tu foto de perfil y compartir fotos en tus chats.",
+          "cameraPermission": "Epa usa la cámara para que puedas mandar fotos y videos en tus chats."
         }
       ],
       "expo-video",
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Epa usa tu ubicacion para mostrarte en el mapa del campus, solo si tu lo activas."
+          "locationWhenInUsePermission": "Epa usa tu ubicación para mostrarte en el mapa del campus, solo si tú lo activas."
         }
       ]
     ]
