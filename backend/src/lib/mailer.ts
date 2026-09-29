@@ -13,13 +13,22 @@ const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
 
 async function sendViaRelay(email: Email) {
   // Apps Script responde a los POST con un redirect a googleusercontent.com y
-  // siempre con HTTP 200, así que el resultado real viene en el JSON.
-  const response = await fetch(env.MAIL_RELAY_URL!, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ secret: env.MAIL_RELAY_SECRET, ...email }),
-    signal: AbortSignal.timeout(15_000),
-  });
+  // siempre con HTTP 200, así que el resultado real viene en el JSON. Tras un
+  // rato sin uso su primera ejecución puede pasar de 15 s. El tope va por
+  // debajo de los 30 s con que la app corta cada request (src/lib/api.ts),
+  // para que al usuario le llegue este error y no uno de conexión.
+  let response: Response;
+  try {
+    response = await fetch(env.MAIL_RELAY_URL!, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ secret: env.MAIL_RELAY_SECRET, ...email }),
+      signal: AbortSignal.timeout(25_000),
+    });
+  } catch (err) {
+    console.error('El relay de correo no respondió', err);
+    throw new HttpError(504, 'El correo está tardando más de lo normal, intenta de nuevo');
+  }
   const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
   if (!response.ok || !result?.ok) {
     console.error('El relay de correo falló', response.status, result?.error);
