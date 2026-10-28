@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { ConversationRow } from '@/src/components/mensajes/ConversationRow';
-import { EmptyState } from '@/src/components/ui';
+import { EmptyState, ReloadButton } from '@/src/components/ui';
 import { useConnectionsStore, useConversationsStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -41,6 +41,7 @@ export default function MensajesScreen() {
         <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}>
           Epa
         </Text>
+        <ReloadButton className="mr-2" />
         <Pressable
           className="items-center justify-center rounded-full mr-2"
           style={{ width: 40, height: 40, backgroundColor: colors['surface-container'] }}

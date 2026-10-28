@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { FeaturedGroupBanner } from '@/src/components/grupos/FeaturedGroupBanner';
 import { GroupCard } from '@/src/components/grupos/GroupCard';
-import { Chip, ConfirmDialog } from '@/src/components/ui';
+import { Chip, ConfirmDialog, ReloadButton } from '@/src/components/ui';
 import { showAlert, useAuthStore, useConnectionsStore, useConversationsStore, useGroupsStore } from '@/src/store';
 import { colors, elevation, getEpaGradient, radii } from '@/src/theme/tokens';
 import type { GroupCategory } from '@/src/types';
@@ -97,6 +97,7 @@ export default function GruposScreen() {
           <Text className="text-on-surface flex-1" style={{ fontFamily: 'Inter_800ExtraBold', fontSize: 20 }}>
             Epa
           </Text>
+          <ReloadButton className="mr-2" />
           <Pressable
             className="bg-surface-container items-center justify-center rounded-full"
             style={{ width: 40, height: 40 }}

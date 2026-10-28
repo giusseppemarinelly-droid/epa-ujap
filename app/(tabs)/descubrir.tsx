@@ -7,7 +7,7 @@ import { ActionButtons } from '@/src/components/descubrir/ActionButtons';
 import { DiscoverCard } from '@/src/components/descubrir/DiscoverCard';
 import { FiltersSheet, type DiscoverFilters } from '@/src/components/descubrir/FiltersSheet';
 import { SwipeableCard } from '@/src/components/descubrir/SwipeableCard';
-import { Avatar, Button, EmptyState } from '@/src/components/ui';
+import { Avatar, Button, EmptyState, ReloadButton } from '@/src/components/ui';
 import { useAuthStore, useDiscoverStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -99,6 +99,7 @@ export default function DescubrirScreen() {
         >
           Epa
         </Text>
+        <ReloadButton className="mr-2" />
         <Pressable
           onPress={() => setFiltersVisible(true)}
           className="flex-row items-center rounded-full bg-surface-container px-3 py-2"

@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { MapCanvas } from '@/src/components/mapa/MapCanvas';
 import { PlanDetailCard } from '@/src/components/mapa/PlanDetailCard';
-import { Avatar, Button, Card } from '@/src/components/ui';
+import { Avatar, Button, Card, ReloadButton } from '@/src/components/ui';
 import {
   showAlert,
   useAuthStore,
@@ -120,6 +120,7 @@ export default function MapaScreen() {
           >
             Epa
           </Text>
+          <ReloadButton className="mr-2" />
           <Pressable
             className="bg-surface-container items-center justify-center rounded-full"
             style={{ width: 40, height: 40 }}

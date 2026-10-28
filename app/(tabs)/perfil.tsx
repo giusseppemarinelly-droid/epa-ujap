@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { Avatar, Badge, Card, Chip, ConfirmDialog } from '@/src/components/ui';
+import { Avatar, Badge, Card, Chip, ConfirmDialog, canReloadApp, reloadApp } from '@/src/components/ui';
 import { showAlert, useAuthStore, useGroupsStore, useThemeStore } from '@/src/store';
 import { colors } from '@/src/theme/tokens';
 
@@ -186,6 +186,7 @@ export default function PerfilScreen() {
           {/* Las acciones del perfil viven aquí arriba, no al final de la
               pantalla: se llega a ellas sin recorrer estadísticas y grupos. */}
           <View className="absolute top-3 right-4 flex-row gap-2">
+            {canReloadApp && <CoverAction icon="refresh" label="Recargar" onPress={reloadApp} />}
             <CoverAction
               icon="notifications"
               label="Notificaciones"
