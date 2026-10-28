@@ -73,7 +73,7 @@ type MapCanvasProps = {
 // vienen en un estilo (claro), a diferencia de CARTO que ofrece light_all y
 // dark_all. Se inyecta una sola vez en <head> porque react-leaflet no expone
 // un prop `style`/`filter` para el TileLayer, solo `className`.
-function useDarkTileFilter() {
+export function useDarkTileFilter() {
   useEffect(() => {
     const styleId = 'epa-map-dark-filter';
     if (document.getElementById(styleId)) return;

@@ -4,6 +4,8 @@ import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { Map as LeafletMap } from 'leaflet';
 import { MaterialIcons } from '@expo/vector-icons';
 
+// Import explícito de la variante web: el MapCanvas nativo no tiene este hook.
+import { useDarkTileFilter } from '@/src/components/mapa/MapCanvas.web';
 import { useThemeStore } from '@/src/store';
 import { colors, elevation } from '@/src/theme/tokens';
 
@@ -39,6 +41,7 @@ function FlyToHandler({ flyTo }: { flyTo: { lat: number; lng: number } | null })
 export function LocationPicker({ initialLat, initialLng, flyTo, onRegionChange }: LocationPickerProps) {
   const mapRef = useRef<LeafletMap | null>(null);
   const isDark = useThemeStore((state) => state.resolvedScheme === 'dark');
+  useDarkTileFilter();
 
   return (
     <View style={{ flex: 1 }}>
@@ -51,12 +54,15 @@ export function LocationPicker({ initialLat, initialLng, flyTo, onRegionChange }
         scrollWheelZoom
         ref={mapRef}
       >
+        {/* Mismos tiles que el mapa principal (MapCanvas.web): CARTO pide API
+            key desde agosto 2026 y aquí salía "API KEY REQUIRED". */}
         <TileLayer
           key={isDark ? 'dark' : 'light'}
-          url={`https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
-          attribution="&copy; OpenStreetMap, &copy; CARTO"
-          subdomains="abcd"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          subdomains="abc"
           maxZoom={19}
+          className={isDark ? 'epa-tiles-dark' : undefined}
         />
         <MoveWatcher onRegionChange={onRegionChange} />
         <FlyToHandler flyTo={flyTo} />
