@@ -39,6 +39,9 @@ export default function OnboardingScreen() {
   const loadInterests = useAuthStore((state) => state.loadInterests);
 
   const [submitting, setSubmitting] = useState(false);
+  // Solo vive en la pantalla: el backend no lo necesita, únicamente evita
+  // crear la cuenta con una contraseña mal tipeada.
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
@@ -56,19 +59,21 @@ export default function OnboardingScreen() {
 
   const isEmailValid =
     draft.email.toLowerCase().trim().endsWith(EMAIL_DOMAIN) && draft.email.length > EMAIL_DOMAIN.length;
+  const passwordsMatch = confirmPassword === draft.password;
 
   const isFormComplete = useMemo(
     () =>
       draft.name.trim().length > 1 &&
       isEmailValid &&
       draft.password.length >= 8 &&
+      passwordsMatch &&
       !!draft.faculty &&
       !!draft.career &&
       draft.career.trim().length > 0 &&
       !!draft.semester &&
       draft.interestIds.length > 0 &&
       draft.lookingFor.length > 0,
-    [isEmailValid, draft]
+    [isEmailValid, passwordsMatch, draft]
   );
 
   async function handleSubmit() {
@@ -209,6 +214,18 @@ export default function OnboardingScreen() {
             value={draft.password}
             onChangeText={(password) => setDraftField('password', password)}
           />
+          <Input
+            label="Repetir contraseña"
+            placeholder="Escríbela otra vez"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          {confirmPassword.length > 0 && !passwordsMatch && (
+            <Text className="text-error mb-3" style={{ fontSize: 12 }}>
+              Las contraseñas no coinciden
+            </Text>
+          )}
           <View className="flex-row items-center">
             <MaterialIcons
               name={isEmailValid ? 'check-circle' : 'mail-outline'}
