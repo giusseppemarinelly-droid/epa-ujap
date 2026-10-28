@@ -33,6 +33,10 @@ const VIDEO_MIME_TYPES: Record<string, string> = {
 // `covers/`. Evita tener que crear y configurar otro bucket público a mano.
 const MEDIA_BUCKET = 'avatars';
 
+// Margen para que el visor descargue el Snap antes de borrar el archivo: cubre
+// la foto (8 s), el video más largo (~17 s) y una conexión lenta.
+const SNAP_FILE_GRACE_MS = 60_000;
+
 export async function listConversations(userId: string) {
   const participations = await prisma.conversationParticipant.findMany({
     where: { userId },
@@ -139,8 +143,11 @@ export async function openSnap(conversationId: string, messageId: string, userId
   const viewers = await prisma.messageView.count({ where: { messageId } });
 
   if (viewers >= recipients) {
-    await deleteFromStorage(MEDIA_BUCKET, mediaUrl);
+    // La URL se quita ya, así nadie puede volver a pedirla. El archivo en sí
+    // se borra después: si se borraba antes de responder, el visor recibía
+    // una URL que ya no existía y mostraba la pantalla en negro.
     await prisma.message.update({ where: { id: messageId }, data: { mediaUrl: null } });
+    setTimeout(() => void deleteFromStorage(MEDIA_BUCKET, mediaUrl), SNAP_FILE_GRACE_MS);
   }
 
   return { mediaUrl, kind: message.kind };
