@@ -3,6 +3,7 @@ import { Image, Modal, Pressable, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
+  ReduceMotion,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -29,6 +30,11 @@ const TAP_THRESHOLD_MS = 220;
 // avisa y se cierra rápido en vez de dejar una pantalla negra en silencio.
 const MISSING_MEDIA_DURATION_MS = 3000;
 
+// En el navegador del teléfono, el mismo toque que abrió el Snap llega además
+// como eventos de mouse emulados justo después; si caen sobre el visor ya
+// montado, cuentan como "toque para cerrar" y lo cierran al instante.
+const IGNORE_PRESS_AFTER_MOUNT_MS = 500;
+
 type SnapViewerProps = {
   mediaUrl: string;
   kind: MessageKind;
@@ -46,6 +52,8 @@ export function SnapViewer({ mediaUrl, kind, onClose }: SnapViewerProps) {
   const progress = useSharedValue(1);
   const totalMs = useRef(!hasMedia ? MISSING_MEDIA_DURATION_MS : isVideo ? VIDEO_FALLBACK_MS : PHOTO_DURATION_MS);
   const pressStartedAt = useRef(0);
+  const mountedAt = useRef(Date.now());
+  const ignoringPress = useRef(false);
   const closed = useRef(false);
   const [remaining, setRemaining] = useState(Math.ceil(totalMs.current / 1000));
 
@@ -64,9 +72,17 @@ export function SnapViewer({ mediaUrl, kind, onClose }: SnapViewerProps) {
 
   const runCountdown = useCallback(
     (durationMs: number) => {
-      progress.value = withTiming(0, { duration: durationMs, easing: Easing.linear }, (done) => {
-        if (done) runOnJS(finish)();
-      });
+      // Esta animación es el temporizador del Snap, no un adorno. Con el
+      // default (ReduceMotion.System), un teléfono con "reducir movimiento"
+      // o ahorro de batería la terminaba al instante y el visor se cerraba
+      // apenas abría.
+      progress.value = withTiming(
+        0,
+        { duration: durationMs, easing: Easing.linear, reduceMotion: ReduceMotion.Never },
+        (done) => {
+          if (done) runOnJS(finish)();
+        }
+      );
     },
     [finish, progress]
   );
@@ -104,12 +120,18 @@ export function SnapViewer({ mediaUrl, kind, onClose }: SnapViewerProps) {
   }, [progress]);
 
   function handlePressIn() {
+    ignoringPress.current = Date.now() - mountedAt.current < IGNORE_PRESS_AFTER_MOUNT_MS;
+    if (ignoringPress.current) return;
     pressStartedAt.current = Date.now();
     cancelAnimation(progress);
     if (isVideo) player.pause();
   }
 
   function handlePressOut() {
+    if (ignoringPress.current) {
+      ignoringPress.current = false;
+      return;
+    }
     if (Date.now() - pressStartedAt.current < TAP_THRESHOLD_MS) {
       finish();
       return;
